@@ -14,7 +14,6 @@
 	"flagged-content": "Flagged Content",
 	"ip-blacklist": "IP Blacklist",
 	"post-queue": "Post Queue",
-
 	"users/online": "Online Users",
 	"users/latest": "Latest Users",
 	"users/sort-posts": "Users with the most posts",
@@ -22,7 +21,6 @@
 	"users/banned": "Banned Users",
 	"users/most-flags": "Most flagged users",
 	"users/search": "User Search",
-
 	"notifications": "Notifications",
 	"tags": "Tags",
 	"tag": "Topics tagged under &quot;%1&quot;",
@@ -31,16 +29,14 @@
 	"login": "Login to your account",
 	"reset": "Reset your account password",
 	"categories": "Categories",
-
 	"groups": "Groups",
 	"group": "%1 group",
-
+	"clubs": "Clubs",
+	"club": "%1 club",
 	"chats": "Chats",
 	"chat": "Chatting with %1",
-
 	"flags": "Flags",
 	"flag-details": "Flag %1 Details",
-
 	"account/edit": "Editing \"%1\"",
 	"account/edit/password": "Editing password of \"%1\"",
 	"account/edit/username": "Editing username of \"%1\"",
@@ -64,11 +60,8 @@
 	"account/blocks": "Blocked users for %1",
 	"account/uploads": "Uploads by %1",
 	"account/sessions": "Login Sessions",
-
 	"confirm": "Email Confirmed",
-
 	"maintenance.text": "%1 is currently undergoing maintenance. Please come back another time.",
 	"maintenance.messageIntro": "Additionally, the administrator has left this message:",
-
 	"throttled.text": "%1 is currently unavailable due to excessive load. Please come back another time."
 }

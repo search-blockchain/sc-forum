@@ -1,5 +1,13 @@
 [
 	{
+		"route": "/clubs",
+		"title": "[[global:header.clubs]]",
+		"enabled": true,
+		"iconClass": "fa-list",
+		"textClass": "visible-xs-inline",
+		"text": "[[global:header.clubs]]"
+	},
+	{
 		"route": "/categories",
 		"title": "[[global:header.categories]]",
 		"enabled": true,
@@ -15,7 +23,9 @@
 		"iconClass": "fa-inbox",
 		"textClass": "visible-xs-inline",
 		"text": "[[global:header.unread]]",
-		"groups": ["registered-users"]
+		"groups": [
+			"registered-users"
+		]
 	},
 	{
 		"route": "/recent",
@@ -64,6 +74,8 @@
 		"iconClass": "fa-cogs",
 		"textClass": "visible-xs-inline",
 		"text": "[[global:header.admin]]",
-		"groups": ["administrators"]
+		"groups": [
+			"administrators"
+		]
 	}
 ]

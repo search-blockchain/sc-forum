@@ -31,6 +31,8 @@
     "categories": "版块",
     "groups": "群组",
     "group": "%1 的群组",
+    "clubs": "俱乐部",
+    "club": "%1 的俱乐部",
     "chats": "聊天",
     "chat": "与 %1 聊天",
     "flags": "举报",

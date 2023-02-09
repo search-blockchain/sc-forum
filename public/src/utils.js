@@ -4,6 +4,8 @@
 
 const $ = require('jquery');
 
+const Blob = require('buffer').Blob
+
 const utils = { ...require('./utils.common') };
 
 utils.getLanguage = function () {
