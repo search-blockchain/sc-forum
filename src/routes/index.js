@@ -101,6 +101,22 @@ _mounts.groups = (app, name, middleware, controllers) => {
 	setupPageRoute(app, `/${name}/:slug/members`, middlewares, controllers.groups.members);
 };
 
+_mounts.clubs = (app, name, middleware, controllers) => {
+	const middlewares = [middleware.canViewGroups];
+
+	// controllers.categories.list
+	// middlewares
+	setupPageRoute(app, '/clubs', [], controllers.clubs.list);
+	
+	setupPageRoute(app, `/${name}`, middlewares, controllers.clubs.list);
+	setupPageRoute(app, `/${name}/:slug`, [], controllers.clubs.details);
+	setupPageRoute(app, `/${name}/:cid/:slug`, [], controllers.clubs.details);
+	// setupPageRoute(app, `/${name}/:slug/members`, middlewares, controllers.clubs.members);
+
+	// setupPageRoute(app, `/${name}/:category_id/:slug/:topic_index`, [], controllers.category.get);
+	// setupPageRoute(app, `/${name}/:category_id/:slug?`, [], controllers.category.get);
+};
+
 module.exports = async function (app, middleware) {
 	const router = express.Router();
 	router.render = function (...args) {
@@ -108,7 +124,7 @@ module.exports = async function (app, middleware) {
 	};
 
 	// Allow plugins/themes to mount some routes elsewhere
-	const remountable = ['admin', 'category', 'topic', 'post', 'users', 'user', 'groups', 'tags'];
+	const remountable = ['admin', 'category', 'topic', 'post', 'users', 'user', 'groups', 'clubs', 'tags'];
 	const { mounts } = await plugins.hooks.fire('filter:router.add', {
 		mounts: remountable.reduce((memo, mount) => {
 			memo[mount] = mount;

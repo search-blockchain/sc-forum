@@ -78,6 +78,7 @@ topicsController.get = async function getTopic(req, res, next) {
 	}
 	const { start, stop } = calculateStartStop(currentPage, postIndex, settings);
 
+	console.log('筛选条件？', topicData, set, req.uid, start, stop, reverse)
 	await topics.getTopicWithPosts(topicData, set, req.uid, start, stop, reverse);
 
 	topics.modifyPostsByPrivilege(topicData, userPrivileges);
@@ -119,6 +120,8 @@ topicsController.get = async function getTopic(req, res, next) {
 		rel.href = `${url}/topic/${topicData.slug}${rel.href}`;
 		res.locals.linkTags.push(rel);
 	});
+
+	console.log('主题topic', topicData)
 
 	res.render('topic', topicData);
 };

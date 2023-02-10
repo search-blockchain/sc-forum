@@ -12,6 +12,7 @@ const plugins = require('../plugins');
 const meta = require('../meta');
 const user = require('../user');
 const groups = require('../groups');
+const clubs = require('../clubs');
 const analytics = require('../analytics');
 const privileges = require('../privileges');
 const cacheCreate = require('../cache/lru');
@@ -140,6 +141,10 @@ middleware.privateTagListing = helpers.try(async (req, res, next) => {
 
 middleware.exposeGroupName = helpers.try(async (req, res, next) => {
 	await expose('groupName', groups.getGroupNameByGroupSlug, 'slug', req, res, next);
+});
+
+middleware.exposeClubName = helpers.try(async (req, res, next) => {
+	await expose('clubName', clubs.getClubNameByClubSlug, 'slug', req, res, next);
 });
 
 middleware.exposeUid = helpers.try(async (req, res, next) => {

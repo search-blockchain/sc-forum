@@ -4,7 +4,7 @@
 
 const $ = require('jquery');
 
-const Blob = require('buffer').Blob
+const NodeBlob = require('buffer').Blob
 
 const utils = { ...require('./utils.common') };
 
@@ -76,7 +76,7 @@ utils.assertPasswordValidity = (password, zxcvbn) => {
 
 utils.generateUUID = function () {
 	// from https://github.com/tracker1/node-uuid4/blob/master/browser.js
-	const temp_url = URL.createObjectURL(new Blob());
+	const temp_url = URL.createObjectURL(Blob ? new Blob() : new NodeBlob());
 	const uuid = temp_url.toString();
 	URL.revokeObjectURL(temp_url);
 	return uuid.split(/[:/]/g).pop().toLowerCase(); // remove prefixes

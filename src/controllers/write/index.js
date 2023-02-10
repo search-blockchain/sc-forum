@@ -4,6 +4,7 @@ const Write = module.exports;
 
 Write.users = require('./users');
 Write.groups = require('./groups');
+Write.clubs = require('./clubs');
 Write.categories = require('./categories');
 Write.topics = require('./topics');
 Write.posts = require('./posts');

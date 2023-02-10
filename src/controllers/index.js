@@ -26,6 +26,7 @@ Controllers.search = require('./search');
 Controllers.user = require('./user');
 Controllers.users = require('./users');
 Controllers.groups = require('./groups');
+Controllers.clubs = require('./clubs');
 Controllers.accounts = require('./accounts');
 Controllers.authentication = require('./authentication');
 Controllers.api = require('./api');

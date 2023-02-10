@@ -128,4 +128,10 @@ apiController.getModerators = async function (req, res) {
 	res.json({ moderators: moderators });
 };
 
+apiController.getRelateGroupMembers = async function (req, res) {
+	const moderators = await categories.getRelateGroupMembers(req.params.cid);
+	const result = JSON.stringify(moderators)
+	res.json({result});
+};
+
 require('../promisify')(apiController, ['getConfig', 'getObject', 'getModerators']);
