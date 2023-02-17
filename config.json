@@ -1,13 +1,13 @@
 {
-    "url": "http://localhost",
+    "url": "http://192.168.1.107",
     "secret": "dae867b8-6111-41cc-97ab-cb222b714e21",
     "database": "mongo",
     "mongo": {
-        "host": "127.0.0.1",
-        "port": "27017",
-        "username": "user",
-        "password": "password",
-        "database": "db",
-        "uri": "mongodb://user:password@127.0.0.1:27017/db"
+        "host": "192.168.1.107",
+        "port": "2052",
+        "username": "searchclub",
+        "password": "weshare123654321",
+        "database": "searchclub",
+        "uri": "mongodb://searchclub:weshare123654321@192.168.1.107:2052/searchclub"
     }
 }
