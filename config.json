@@ -1,5 +1,5 @@
 {
-    "url": "http://192.168.1.107",
+    "url": "http://192.168.1.107/forum",
     "secret": "dae867b8-6111-41cc-97ab-cb222b714e21",
     "database": "mongo",
     "mongo": {
