@@ -130,11 +130,11 @@ const getTempQuery = function({ cid, uid }) {
 }
 
 clubsController.details = async function (req, res, next) {
-	const slug = slugify(req.params.slug)
-	const lowercaseSlug = slug.toLowerCase();
-	if (req.params.slug !== lowercaseSlug) {
+	let slug = req.params.slug
+	const lowercaseSlug = slugify(slug).toLowerCase();
+	if (slug !== lowercaseSlug) {
 		if (res.locals.isAPI) {
-			req.params.slug = lowercaseSlug;
+			slug = lowercaseSlug;
 		} else {
 			return res.redirect(`${nconf.get('relative_path')}/clubs/${lowercaseSlug}`);
 		}
@@ -153,6 +153,7 @@ clubsController.details = async function (req, res, next) {
 	if (!exists) {
 		return next();
 	}
+
 	if (isHidden && !isAdmin && !isGlobalMod) {
 		const [isMember, isInvited] = await Promise.all([
 			clubs.isMember(req.uid, clubName),
@@ -176,9 +177,27 @@ clubsController.details = async function (req, res, next) {
 		truncateUserList: true,
 		userListCount: 20,
 	})
+	console.log('查找group数据', groupData, exists, clubName, lowercaseSlug)
+	
+	if (!groupData) {
+		return next();
+	}
+	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
 	
 	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
-		return next();
+		console.warn('未关联Cid')
+		res.render('clubs/topics', {
+			title: `[[pages:clubs, ${groupData.displayName}]]`,
+			group: groupData,
+			category: [],
+			topics: [],
+			isAdmin: isAdmin,
+			isGlobalMod: isGlobalMod,
+			allowPrivateGroups: meta.config.allowPrivateGroups,
+			breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
+			// ...fullTopics[0]
+		});
+		return
 	}
 
 	// console.log('列表，群组数据！！', groupData)
@@ -288,11 +307,6 @@ clubsController.details = async function (req, res, next) {
 	
 	// console.log('完整topic数据', fullTopics)
 	
-	if (!groupData) {
-		return next();
-	}
-	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
-
 	// console.log('group数据', groupData)
 
 	res.render('clubs/topics', {
@@ -307,8 +321,7 @@ clubsController.details = async function (req, res, next) {
 		allowPrivateGroups: meta.config.allowPrivateGroups,
 		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
 		...fullTopics[0]
-	}
-	);
+	});
 };
 
 clubsController.groupDetails = async function (req, res, next) {
@@ -318,7 +331,7 @@ clubsController.groupDetails = async function (req, res, next) {
 		if (res.locals.isAPI) {
 			slug = lowercaseSlug;
 		} else {
-			return res.redirect(`${nconf.get('relative_path')}/groups/${lowercaseSlug}`);
+			return res.redirect(`${nconf.get('relative_path')}/clubs/${lowercaseSlug}`);
 		}
 	}
 	const groupName = await groups.getGroupNameByGroupSlug(slug);
@@ -356,14 +369,14 @@ clubsController.groupDetails = async function (req, res, next) {
 	}
 	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
 
-	res.render('groups/details', {
-		title: `[[pages:group, ${groupData.displayName}]]`,
+	res.render('clubs/details', {
+		title: `[[pages:clubs, ${groupData.displayName}]]`,
 		group: groupData,
 		posts: posts,
 		isAdmin: isAdmin,
 		isGlobalMod: isGlobalMod,
 		allowPrivateGroups: meta.config.allowPrivateGroups,
-		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:groups]]', url: '/groups' }, { text: groupData.displayName }]),
+		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
 	});
 };
 
