@@ -31,6 +31,17 @@ Assert.user = helpers.try(async (req, res, next) => {
 	next();
 });
 
+// 转换Group Name为Slug并搜索
+Assert.groupBySlug = helpers.try(async (req, res, next) => {
+	const slug = slugify(req.params.slug);
+	const name = await groups.getGroupNameByGroupSlug(slug);
+	if (!name || !await groups.exists(name)) {
+		return controllerHelpers.formatApiResponse(404, res, new Error('[[error:no-group]]'));
+	}
+
+	next();
+});
+
 Assert.group = helpers.try(async (req, res, next) => {
 	const name = await groups.getGroupNameByGroupSlug(req.params.slug);
 	if (!name || !await groups.exists(name)) {
