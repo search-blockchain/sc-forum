@@ -177,7 +177,6 @@ clubsController.details = async function (req, res, next) {
 		truncateUserList: true,
 		userListCount: 20,
 	})
-	console.log('查找group数据', groupData, exists, clubName, lowercaseSlug)
 	
 	if (!groupData) {
 		return next();
