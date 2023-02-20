@@ -19,7 +19,7 @@ module.exports = function (Groups) {
 
 	Groups.getUserGroupsFromSet = async function (set, uids) {
 		const memberOf = await Groups.getUserGroupMembership(set, uids);
-		return await Promise.all(memberOf.map(memberOf => Groups.getGroupsData(memberOf)));
+		return await Promise.all(memberOf.map(memberOf => Groups.getClubsData(memberOf)));
 	};
 
 	Groups.getUserGroupMembership = async function (set, uids) {
@@ -33,8 +33,8 @@ module.exports = function (Groups) {
 	}
 
 	Groups.getUserInviteGroups = async function (uid) {
-		let allGroups = await Groups.getNonPrivilegeGroups('groups:createtime', 0, -1);
-		allGroups = allGroups.filter(group => !Groups.ephemeralGroups.includes(group.name));
+		let allGroups = await Groups.getNonPrivilegeClubs('groups:createtime', 0, -1);
+		allGroups = allGroups.filter(group => !Groups.ephemeralClubs.includes(group.name));
 
 		const publicGroups = allGroups.filter(group => group.hidden === 0 && group.system === 0 && group.private === 0);
 		const adminModGroups = [

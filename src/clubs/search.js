@@ -11,18 +11,18 @@ module.exports = function (Groups) {
 		query = String(query).toLowerCase();
 		let groupNames = await db.getSortedSetRange('groups:createtime', 0, -1);
 		if (!options.hideEphemeralGroups) {
-			groupNames = Groups.ephemeralGroups.concat(groupNames);
+			groupNames = Groups.ephemeralClubs.concat(groupNames);
 		}
 		groupNames = groupNames.filter(name => name.toLowerCase().includes(query) &&
 			name !== Groups.BANNED_USERS && // hide banned-users in searches
-			!Groups.isPrivilegeGroup(name));
+			!Groups.isPrivilegeClub(name));
 		groupNames = groupNames.slice(0, 100);
 
 		let groupsData;
 		if (options.showMembers) {
-			groupsData = await Groups.getGroupsAndMembers(groupNames);
+			groupsData = await Groups.getClubsFromSet(groupNames);
 		} else {
-			groupsData = await Groups.getGroupsData(groupNames);
+			groupsData = await Groups.getClubsData(groupNames);
 		}
 		groupsData = groupsData.filter(Boolean);
 		if (options.filterHidden) {

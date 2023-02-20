@@ -106,7 +106,7 @@ module.exports = function (Groups) {
 
 	Groups.isMemberOfGroupList = async function (uid, groupListKey) {
 		let groupNames = await getGroupNames(groupListKey);
-		groupNames = Groups.removeEphemeralGroups(groupNames);
+		groupNames = Groups.removeEphemeralClubs(groupNames);
 		if (!groupNames.length) {
 			return false;
 		}
@@ -119,7 +119,7 @@ module.exports = function (Groups) {
 		const members = await getGroupNames(groupListKeys);
 
 		let uniqueGroups = _.uniq(_.flatten(members));
-		uniqueGroups = Groups.removeEphemeralGroups(uniqueGroups);
+		uniqueGroups = Groups.removeEphemeralClubs(uniqueGroups);
 
 		const isMembers = await Groups.isMemberOfGroups(uid, uniqueGroups);
 		const isGroupMember = _.zipObject(uniqueGroups, isMembers);
@@ -131,7 +131,7 @@ module.exports = function (Groups) {
 		const results = uids.map(() => false);
 
 		let groupNames = await getGroupNames(groupListKey);
-		groupNames = Groups.removeEphemeralGroups(groupNames);
+		groupNames = Groups.removeEphemeralClubs(groupNames);
 		if (!groupNames.length) {
 			return results;
 		}

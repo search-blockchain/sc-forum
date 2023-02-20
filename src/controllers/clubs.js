@@ -4,6 +4,7 @@ const validator = require('validator');
 const nconf = require('nconf');
 
 const meta = require('../meta');
+const clubs = require('../clubs');
 const groups = require('../groups');
 const categories = require('../categories');
 const topics = require('../topics');
@@ -12,6 +13,7 @@ const helpers = require('./helpers');
 const pagination = require('../pagination');
 const privileges = require('../privileges');
 const utils = require('../utils');
+const slugify = require('../slugify');
 
 const clubsController = module.exports;
 
@@ -30,14 +32,12 @@ clubsController.list = async function (req, res) {
 			// Club.isInvited(req.uid, item.slug),
 			groups.ownership.isOwner(req.uid, item.name),
 		])
-		const tagContent = isOwner ? 'Create' : (isMember ? 'Join' : '')
+		const tagContent = isOwner ? 'Owner' : (isMember ? 'Join' : '')
 		const cid = groupData[index].memberPostCidsArray?.[0] || ''
 		const obj = Object.assign({isMember, isOwner, tagContent, cid}, groupData[index])
 		console.log('push明细', obj)
 		return obj
 	}))
-
-	console.log('群组明细', newGroupData)
 	
 	res.render('clubs/list', {
 		groups: newGroupData,
@@ -130,7 +130,8 @@ const getTempQuery = function({ cid, uid }) {
 }
 
 clubsController.details = async function (req, res, next) {
-	const lowercaseSlug = req.params.slug.toLowerCase();
+	const slug = slugify(req.params.slug)
+	const lowercaseSlug = slug.toLowerCase();
 	if (req.params.slug !== lowercaseSlug) {
 		if (res.locals.isAPI) {
 			req.params.slug = lowercaseSlug;
@@ -139,13 +140,13 @@ clubsController.details = async function (req, res, next) {
 		}
 	}
 	
-	const groupName = await groups.getGroupNameByGroupSlug(req.params.slug);
-	if (!groupName) {
+	const clubName = await clubs.getClubNameByClubSlug(slug);
+	if (!clubName) {
 		return next();
 	}
 	const [exists, isHidden, isAdmin, isGlobalMod] = await Promise.all([
-		groups.exists(groupName),
-		groups.isHidden(groupName),
+		clubs.exists(clubName),
+		clubs.isHidden(clubName),
 		user.isAdministrator(req.uid),
 		user.isGlobalModerator(req.uid),
 	]);
@@ -154,23 +155,23 @@ clubsController.details = async function (req, res, next) {
 	}
 	if (isHidden && !isAdmin && !isGlobalMod) {
 		const [isMember, isInvited] = await Promise.all([
-			groups.isMember(req.uid, groupName),
-			groups.isInvited(req.uid, groupName),
+			clubs.isMember(req.uid, clubName),
+			clubs.isInvited(req.uid, clubName),
 		]);
 		if (!isMember && !isInvited) {
 			return next();
 		}
 	}
 	// const [groupData, posts] = await Promise.all([
-	// 	groups.get(groupName, {
+	// 	clubs.get(clubName, {
 	// 		uid: req.uid,
 	// 		truncateUserList: true,
 	// 		userListCount: 20,
 	// 	}),
-	// 	groups.getLatestMemberPosts(groupName, 10, req.uid),
+	// 	clubs.getLatestMemberPosts(clubName, 10, req.uid),
 	// ]);
 
-	const groupData = await groups.get(groupName, {
+	const groupData = await clubs.get(clubName, {
 		uid: req.uid,
 		truncateUserList: true,
 		userListCount: 20,
@@ -223,8 +224,8 @@ clubsController.details = async function (req, res, next) {
 	
 	let query = getTempQuery({ cid: groupData.memberPostCidsArray[0], uid: req.uid})
 	const topicList = await categories.getCategoryById(query)
-	console.log('按CID查询topic', topicList)
-	console.log('查看回复？', topicList.topics[2])
+	// console.log('按CID查询topic', topicList)
+	console.log('查看回复？', topicList.length, topicList.topics[2])
 	// const ttid = 7
 	// const topicData = await topics.getTopicData(ttid)
 	// console.log('数据比对——完整帖子', topicData)
@@ -285,12 +286,14 @@ clubsController.details = async function (req, res, next) {
 
 	// }
 	
-	console.log('完整topic数据', fullTopics)
+	// console.log('完整topic数据', fullTopics)
 	
 	if (!groupData) {
 		return next();
 	}
 	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
+
+	// console.log('group数据', groupData)
 
 	res.render('clubs/topics', {
 		title: `[[pages:clubs, ${groupData.displayName}]]`,

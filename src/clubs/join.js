@@ -50,7 +50,7 @@ module.exports = function (Groups) {
 		Groups.clearCache(uid, groupsToJoin);
 		cache.del(groupsToJoin.map(name => `group:${name}:members`));
 
-		const groupData = await Groups.getGroupsFields(groupsToJoin, ['name', 'hidden', 'memberCount']);
+		const groupData = await Groups.getClubsFields(groupsToJoin, ['name', 'hidden', 'memberCount']);
 		const visibleGroups = groupData.filter(groupData => groupData && !groupData.hidden);
 
 		if (visibleGroups.length) {
@@ -93,7 +93,7 @@ module.exports = function (Groups) {
 	async function setGroupTitleIfNotSet(groupNames, uid) {
 		const ignore = ['registered-users', 'verified-users', 'unverified-users', Groups.BANNED_USERS];
 		groupNames = groupNames.filter(
-			groupName => !ignore.includes(groupName) && !Groups.isPrivilegeGroup(groupName)
+			groupName => !ignore.includes(groupName) && !Groups.isPrivilegeClub(groupName)
 		);
 		if (!groupNames.length) {
 			return;

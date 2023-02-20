@@ -14,13 +14,13 @@ const intFields = [
 ];
 
 module.exports = function (Groups) {
-	Groups.getGroupsFields = async function (groupNames, fields) {
+	Groups.getClubsFields = async function (groupNames, fields) {
 		if (!Array.isArray(groupNames) || !groupNames.length) {
 			return [];
 		}
 
 		const ephemeralIdx = groupNames.reduce((memo, cur, idx) => {
-			if (Groups.ephemeralGroups.includes(cur)) {
+			if (Groups.ephemeralClubs.includes(cur)) {
 				memo.push(idx);
 			}
 			return memo;
@@ -30,7 +30,7 @@ module.exports = function (Groups) {
 		const groupData = await db.getObjects(keys, fields);
 		if (ephemeralIdx.length) {
 			ephemeralIdx.forEach((idx) => {
-				groupData[idx] = Groups.getEphemeralGroup(groupNames[idx]);
+				groupData[idx] = Groups.getEphemeralClub(groupNames[idx]);
 			});
 		}
 
@@ -40,12 +40,12 @@ module.exports = function (Groups) {
 		return results.groups;
 	};
 
-	Groups.getGroupsData = async function (groupNames) {
-		return await Groups.getGroupsFields(groupNames, []);
+	Groups.getClubsData = async function (groupNames) {
+		return await Groups.getClubsFields(groupNames, []);
 	};
 
-	Groups.getGroupData = async function (groupName) {
-		const groupsData = await Groups.getGroupsData([groupName]);
+	Groups.getClubData = async function (groupName) {
+		const groupsData = await Groups.getClubsData([groupName]);
 		return Array.isArray(groupsData) && groupsData[0] ? groupsData[0] : null;
 	};
 
@@ -55,7 +55,7 @@ module.exports = function (Groups) {
 	};
 
 	Groups.getGroupFields = async function (groupName, fields) {
-		const groups = await Groups.getGroupsFields([groupName], fields);
+		const groups = await Groups.getClubsFields([groupName], fields);
 		return groups ? groups[0] : null;
 	};
 

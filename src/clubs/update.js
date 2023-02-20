@@ -144,7 +144,7 @@ module.exports = function (Groups) {
 	}
 
 	async function checkNameChange(currentName, newName) {
-		if (Groups.isPrivilegeGroup(newName)) {
+		if (Groups.isPrivilegeClub(newName)) {
 			throw new Error('[[error:invalid-group-name]]');
 		}
 		const currentSlug = slugify(currentName);
@@ -154,7 +154,7 @@ module.exports = function (Groups) {
 		}
 		Groups.validateGroupName(newName);
 		const [group, exists] = await Promise.all([
-			Groups.getGroupData(currentName),
+			Groups.getClubData(currentName),
 			Groups.existsBySlug(newSlug),
 		]);
 

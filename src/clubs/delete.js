@@ -11,7 +11,7 @@ module.exports = function (Groups) {
 			groupNames = [groupNames];
 		}
 
-		let groupsData = await Groups.getGroupsData(groupNames);
+		let groupsData = await Groups.getClubsData(groupNames);
 		groupsData = groupsData.filter(Boolean);
 		if (!groupsData.length) {
 			return;
@@ -47,7 +47,7 @@ module.exports = function (Groups) {
 
 	async function removeGroupsFromPrivilegeGroups(groupNames) {
 		await batch.processSortedSet('groups:createtime', async (otherGroups) => {
-			const privilegeGroups = otherGroups.filter(group => Groups.isPrivilegeGroup(group));
+			const privilegeGroups = otherGroups.filter(group => Groups.isPrivilegeClub(group));
 			const keys = privilegeGroups.map(group => `group:${group}:members`);
 			await db.sortedSetRemove(keys, groupNames);
 		}, {

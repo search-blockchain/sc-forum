@@ -60,15 +60,15 @@ module.exports = function (Groups) {
 
 		await db.setObjectField('groupslug:groupname', groupData.slug, groupData.name);
 
-		groupData = await Groups.getGroupData(groupData.name);
+		groupData = await Groups.getClubData(groupData.name);
 		plugins.hooks.fire('action:group.create', { group: groupData });
 		return groupData;
 	};
 
 	function isSystemGroup(data) {
 		return data.system === true || parseInt(data.system, 10) === 1 ||
-			Groups.systemGroups.includes(data.name) ||
-			Groups.isPrivilegeGroup(data.name);
+			Groups.systemClubs.includes(data.name) ||
+			Groups.isPrivilegeClub(data.name);
 	}
 
 	Groups.validateGroupName = function (name) {
@@ -80,11 +80,11 @@ module.exports = function (Groups) {
 			throw new Error('[[error:invalid-group-name]]');
 		}
 
-		if (!Groups.isPrivilegeGroup(name) && name.length > meta.config.maximumGroupNameLength) {
+		if (!Groups.isPrivilegeClub(name) && name.length > meta.config.maximumGroupNameLength) {
 			throw new Error('[[error:group-name-too-long]]');
 		}
 
-		if (name === 'guests' || (!Groups.isPrivilegeGroup(name) && name.includes(':'))) {
+		if (name === 'guests' || (!Groups.isPrivilegeClub(name) && name.includes(':'))) {
 			throw new Error('[[error:invalid-group-name]]');
 		}
 
