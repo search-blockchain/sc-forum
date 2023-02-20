@@ -10,9 +10,9 @@
     },
     "main": "app.js",
     "scripts": {
-        "build": "./nodebb build",
-        "dev": "node --max_old_space_size=4096 ./nodebb dev",
-        "start": "./nodebb start",
+        "build": "node ./nodebb build",
+        "dev": "node --max_old_space_size=4096 & ./nodebb dev",
+        "start": "node ./nodebb start",
         "startLoader": "node loader.js",
         "lint": "eslint --cache ./nodebb .",
         "test": "nyc --reporter=html --reporter=text-summary mocha",
