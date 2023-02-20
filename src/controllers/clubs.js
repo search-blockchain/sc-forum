@@ -140,7 +140,7 @@ clubsController.details = async function (req, res, next) {
 		}
 	}
 	
-	const clubName = await clubs.getClubNameByClubSlug(slug);
+	const clubName = await clubs.getClubNameByClubSlug(lowercaseSlug);
 	if (!clubName) {
 		return next();
 	}
@@ -309,6 +309,62 @@ clubsController.details = async function (req, res, next) {
 		...fullTopics[0]
 	}
 	);
+};
+
+clubsController.groupDetails = async function (req, res, next) {
+	let slug = req.params.slug
+	const lowercaseSlug = slugify(slug).toLowerCase();
+	if (slug !== lowercaseSlug) {
+		if (res.locals.isAPI) {
+			slug = lowercaseSlug;
+		} else {
+			return res.redirect(`${nconf.get('relative_path')}/groups/${lowercaseSlug}`);
+		}
+	}
+	const groupName = await groups.getGroupNameByGroupSlug(slug);
+	if (!groupName) {
+		return next();
+	}
+	const [exists, isHidden, isAdmin, isGlobalMod] = await Promise.all([
+		groups.exists(groupName),
+		groups.isHidden(groupName),
+		user.isAdministrator(req.uid),
+		user.isGlobalModerator(req.uid),
+	]);
+	if (!exists) {
+		return next();
+	}
+	if (isHidden && !isAdmin && !isGlobalMod) {
+		const [isMember, isInvited] = await Promise.all([
+			groups.isMember(req.uid, groupName),
+			groups.isInvited(req.uid, groupName),
+		]);
+		if (!isMember && !isInvited) {
+			return next();
+		}
+	}
+	const [groupData, posts] = await Promise.all([
+		groups.get(groupName, {
+			uid: req.uid,
+			truncateUserList: true,
+			userListCount: 20,
+		}),
+		groups.getLatestMemberPosts(groupName, 10, req.uid),
+	]);
+	if (!groupData) {
+		return next();
+	}
+	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
+
+	res.render('groups/details', {
+		title: `[[pages:group, ${groupData.displayName}]]`,
+		group: groupData,
+		posts: posts,
+		isAdmin: isAdmin,
+		isGlobalMod: isGlobalMod,
+		allowPrivateGroups: meta.config.allowPrivateGroups,
+		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:groups]]', url: '/groups' }, { text: groupData.displayName }]),
+	});
 };
 
 clubsController.members = async function (req, res, next) {

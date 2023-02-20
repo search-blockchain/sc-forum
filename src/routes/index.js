@@ -108,8 +108,9 @@ _mounts.clubs = (app, name, middleware, controllers) => {
 	// middlewares
 	setupPageRoute(app, '/clubs', [], controllers.clubs.list);
 	
-	setupPageRoute(app, `/${name}`, middlewares, controllers.clubs.list);
-	setupPageRoute(app, `/${name}/:slug`, [], controllers.clubs.details);
+	// middlewares
+	setupPageRoute(app, `/${name}`, [], controllers.clubs.list);
+	setupPageRoute(app, `/${name}/:slug`, [], controllers.clubs.groupDetails);
 	setupPageRoute(app, `/${name}/:cid/:slug`, [], controllers.clubs.details);
 	// setupPageRoute(app, `/${name}/:slug/members`, middlewares, controllers.clubs.members);
 
