@@ -3,37 +3,37 @@
 const db = require('../database');
 const plugins = require('../plugins');
 
-module.exports = function (clubs) {
-	clubs.ownership = {};
+module.exports = function (Groups) {
+	Groups.ownership = {};
 
-	clubs.ownership.isOwner = async function (uid, clubName) {
+	Groups.ownership.isOwner = async function (uid, groupName) {
 		if (!(parseInt(uid, 10) > 0)) {
 			return false;
 		}
-		return await db.isSetMember(`club:${clubName}:owners`, uid);
+		return await db.isSetMember(`group:${groupName}:owners`, uid);
 	};
 
-	clubs.ownership.isOwners = async function (uids, clubName) {
+	Groups.ownership.isOwners = async function (uids, groupName) {
 		if (!Array.isArray(uids)) {
 			return [];
 		}
 
-		return await db.isSetMembers(`club:${clubName}:owners`, uids);
+		return await db.isSetMembers(`group:${groupName}:owners`, uids);
 	};
 
-	clubs.ownership.grant = async function (toUid, clubName) {
-		await db.setAdd(`club:${clubName}:owners`, toUid);
-		plugins.hooks.fire('action:club.grantOwnership', { uid: toUid, clubName: clubName });
+	Groups.ownership.grant = async function (toUid, groupName) {
+		await db.setAdd(`group:${groupName}:owners`, toUid);
+		plugins.hooks.fire('action:group.grantOwnership', { uid: toUid, groupName: groupName });
 	};
 
-	clubs.ownership.rescind = async function (toUid, clubName) {
+	Groups.ownership.rescind = async function (toUid, groupName) {
 		// If the owners set only contains one member (and toUid is that member), error out!
-		const numOwners = await db.setCount(`club:${clubName}:owners`);
-		const isOwner = await db.isSortedSetMember(`club:${clubName}:owners`);
+		const numOwners = await db.setCount(`group:${groupName}:owners`);
+		const isOwner = await db.isSortedSetMember(`group:${groupName}:owners`);
 		if (numOwners <= 1 && isOwner) {
-			throw new Error('[[error:club-needs-owner]]');
+			throw new Error('[[error:group-needs-owner]]');
 		}
-		await db.setRemove(`club:${clubName}:owners`, toUid);
-		plugins.hooks.fire('action:club.rescindOwnership', { uid: toUid, clubName: clubName });
+		await db.setRemove(`group:${groupName}:owners`, toUid);
+		plugins.hooks.fire('action:group.rescindOwnership', { uid: toUid, groupName: groupName });
 	};
 };

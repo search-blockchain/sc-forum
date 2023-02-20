@@ -4,10 +4,10 @@
     "database": "mongo",
     "mongo": {
         "host": "192.168.1.107",
-        "port": "2052",
+        "port": "27017",
         "username": "searchclub",
         "password": "weshare123654321",
         "database": "searchclub",
-        "uri": "mongodb://searchclub:weshare123654321@192.168.1.107:2052/searchclub"
+        "uri": "mongodb://searchclub:weshare123654321@192.168.1.107:27017/searchclub"
     }
 }

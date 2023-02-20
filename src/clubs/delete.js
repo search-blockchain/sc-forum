@@ -5,51 +5,51 @@ const slugify = require('../slugify');
 const db = require('../database');
 const batch = require('../batch');
 
-module.exports = function (Clubs) {
-	Clubs.destroy = async function (clubNames) {
-		if (!Array.isArray(clubNames)) {
-			clubNames = [clubNames];
+module.exports = function (Groups) {
+	Groups.destroy = async function (groupNames) {
+		if (!Array.isArray(groupNames)) {
+			groupNames = [groupNames];
 		}
 
-		let clubsData = await Clubs.getClubsData(clubNames);
-		clubsData = clubsData.filter(Boolean);
-		if (!clubsData.length) {
+		let groupsData = await Groups.getGroupsData(groupNames);
+		groupsData = groupsData.filter(Boolean);
+		if (!groupsData.length) {
 			return;
 		}
 		const keys = [];
-		clubNames.forEach((clubName) => {
+		groupNames.forEach((groupName) => {
 			keys.push(
-				`club:${clubName}`,
-				`club:${clubName}:members`,
-				`club:${clubName}:pending`,
-				`club:${clubName}:invited`,
-				`club:${clubName}:owners`,
-				`club:${clubName}:member:pids`
+				`group:${groupName}`,
+				`group:${groupName}:members`,
+				`group:${groupName}:pending`,
+				`group:${groupName}:invited`,
+				`group:${groupName}:owners`,
+				`group:${groupName}:member:pids`
 			);
 		});
-		const sets = clubNames.map(clubName => `${clubName.toLowerCase()}:${clubName}`);
-		const fields = clubNames.map(clubName => slugify(clubName));
+		const sets = groupNames.map(groupName => `${groupName.toLowerCase()}:${groupName}`);
+		const fields = groupNames.map(groupName => slugify(groupName));
 
 		await Promise.all([
 			db.deleteAll(keys),
 			db.sortedSetRemove([
-				'clubs:createtime',
-				'clubs:visible:createtime',
-				'clubs:visible:memberCount',
-			], clubNames),
-			db.sortedSetRemove('clubs:visible:name', sets),
-			db.deleteObjectFields('clubslug:clubname', fields),
-			removeClubsFromPrivilegeClubs(clubNames),
+				'groups:createtime',
+				'groups:visible:createtime',
+				'groups:visible:memberCount',
+			], groupNames),
+			db.sortedSetRemove('groups:visible:name', sets),
+			db.deleteObjectFields('groupslug:groupname', fields),
+			removeGroupsFromPrivilegeGroups(groupNames),
 		]);
-		Clubs.cache.reset();
-		plugins.hooks.fire('action:clubs.destroy', { clubs: clubsData });
+		Groups.cache.reset();
+		plugins.hooks.fire('action:groups.destroy', { groups: groupsData });
 	};
 
-	async function removeClubsFromPrivilegeClubs(clubNames) {
-		await batch.processSortedSet('clubs:createtime', async (otherClubs) => {
-			const privilegeClubs = otherClubs.filter(club => Clubs.isPrivilegeClub(club));
-			const keys = privilegeClubs.map(club => `club:${club}:members`);
-			await db.sortedSetRemove(keys, clubNames);
+	async function removeGroupsFromPrivilegeGroups(groupNames) {
+		await batch.processSortedSet('groups:createtime', async (otherGroups) => {
+			const privilegeGroups = otherGroups.filter(group => Groups.isPrivilegeGroup(group));
+			const keys = privilegeGroups.map(group => `group:${group}:members`);
+			await db.sortedSetRemove(keys, groupNames);
 		}, {
 			batch: 500,
 		});

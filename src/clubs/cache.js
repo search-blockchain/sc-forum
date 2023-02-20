@@ -2,18 +2,18 @@
 
 const cacheCreate = require('../cache/lru');
 
-module.exports = function (Clubs) {
-	Clubs.cache = cacheCreate({
-		name: 'club',
+module.exports = function (Groups) {
+	Groups.cache = cacheCreate({
+		name: 'group',
 		max: 40000,
 		ttl: 0,
 	});
 
-	Clubs.clearCache = function (uid, clubNames) {
-		if (!Array.isArray(clubNames)) {
-			clubNames = [clubNames];
+	Groups.clearCache = function (uid, groupNames) {
+		if (!Array.isArray(groupNames)) {
+			groupNames = [groupNames];
 		}
-		const keys = clubNames.map(name => `${uid}:${name}`);
-		Clubs.cache.del(keys);
+		const keys = groupNames.map(name => `${uid}:${name}`);
+		Groups.cache.del(keys);
 	};
 };

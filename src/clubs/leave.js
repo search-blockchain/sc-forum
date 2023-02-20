@@ -5,65 +5,65 @@ const user = require('../user');
 const plugins = require('../plugins');
 const cache = require('../cache');
 
-module.exports = function (clubs) {
-	clubs.leave = async function (clubNames, uid) {
-		if (Array.isArray(clubNames) && !clubNames.length) {
+module.exports = function (Groups) {
+	Groups.leave = async function (groupNames, uid) {
+		if (Array.isArray(groupNames) && !groupNames.length) {
 			return;
 		}
-		if (!Array.isArray(clubNames)) {
-			clubNames = [clubNames];
+		if (!Array.isArray(groupNames)) {
+			groupNames = [groupNames];
 		}
 
-		const isMembers = await clubs.isMemberOfclubs(uid, clubNames);
+		const isMembers = await Groups.isMemberOfGroups(uid, groupNames);
 
-		const clubsToLeave = clubNames.filter((clubName, index) => isMembers[index]);
-		if (!clubsToLeave.length) {
+		const groupsToLeave = groupNames.filter((groupName, index) => isMembers[index]);
+		if (!groupsToLeave.length) {
 			return;
 		}
 
 		await Promise.all([
-			db.sortedSetRemove(clubsToLeave.map(clubName => `club:${clubName}:members`), uid),
-			db.setRemove(clubsToLeave.map(clubName => `club:${clubName}:owners`), uid),
-			db.decrObjectField(clubsToLeave.map(clubName => `club:${clubName}`), 'memberCount'),
+			db.sortedSetRemove(groupsToLeave.map(groupName => `group:${groupName}:members`), uid),
+			db.setRemove(groupsToLeave.map(groupName => `group:${groupName}:owners`), uid),
+			db.decrObjectField(groupsToLeave.map(groupName => `group:${groupName}`), 'memberCount'),
 		]);
 
-		clubs.clearCache(uid, clubsToLeave);
-		cache.del(clubsToLeave.map(name => `club:${name}:members`));
+		Groups.clearCache(uid, groupsToLeave);
+		cache.del(groupsToLeave.map(name => `group:${name}:members`));
 
-		const clubData = await clubs.getclubsFields(clubsToLeave, ['name', 'hidden', 'memberCount']);
-		if (!clubData) {
+		const groupData = await Groups.getGroupsFields(groupsToLeave, ['name', 'hidden', 'memberCount']);
+		if (!groupData) {
 			return;
 		}
 
-		const emptyPrivilegeclubs = clubData.filter(g => g && clubs.isPrivilegeclub(g.name) && g.memberCount === 0);
-		const visibleclubs = clubData.filter(g => g && !g.hidden);
+		const emptyPrivilegeGroups = groupData.filter(g => g && Groups.isPrivilegeGroup(g.name) && g.memberCount === 0);
+		const visibleGroups = groupData.filter(g => g && !g.hidden);
 
 		const promises = [];
-		if (emptyPrivilegeclubs.length) {
-			promises.push(clubs.destroy, emptyPrivilegeclubs);
+		if (emptyPrivilegeGroups.length) {
+			promises.push(Groups.destroy, emptyPrivilegeGroups);
 		}
-		if (visibleclubs.length) {
+		if (visibleGroups.length) {
 			promises.push(
 				db.sortedSetAdd,
-				'clubs:visible:memberCount',
-				visibleclubs.map(clubData => clubData.memberCount),
-				visibleclubs.map(clubData => clubData.name)
+				'groups:visible:memberCount',
+				visibleGroups.map(groupData => groupData.memberCount),
+				visibleGroups.map(groupData => groupData.name)
 			);
 		}
 
 		await Promise.all(promises);
 
-		await clearclubTitleIfSet(clubsToLeave, uid);
+		await clearGroupTitleIfSet(groupsToLeave, uid);
 
-		plugins.hooks.fire('action:club.leave', {
-			clubNames: clubsToLeave,
+		plugins.hooks.fire('action:group.leave', {
+			groupNames: groupsToLeave,
 			uid: uid,
 		});
 	};
 
-	async function clearclubTitleIfSet(clubNames, uid) {
-		clubNames = clubNames.filter(clubName => clubName !== 'registered-users' && !clubs.isPrivilegeclub(clubName));
-		if (!clubNames.length) {
+	async function clearGroupTitleIfSet(groupNames, uid) {
+		groupNames = groupNames.filter(groupName => groupName !== 'registered-users' && !Groups.isPrivilegeGroup(groupName));
+		if (!groupNames.length) {
 			return;
 		}
 		const userData = await user.getUserData(uid);
@@ -71,30 +71,30 @@ module.exports = function (clubs) {
 			return;
 		}
 
-		const newTitleArray = userData.clubTitleArray.filter(clubTitle => !clubNames.includes(clubTitle));
+		const newTitleArray = userData.groupTitleArray.filter(groupTitle => !groupNames.includes(groupTitle));
 		if (newTitleArray.length) {
-			await db.setObjectField(`user:${uid}`, 'clubTitle', JSON.stringify(newTitleArray));
+			await db.setObjectField(`user:${uid}`, 'groupTitle', JSON.stringify(newTitleArray));
 		} else {
-			await db.deleteObjectField(`user:${uid}`, 'clubTitle');
+			await db.deleteObjectField(`user:${uid}`, 'groupTitle');
 		}
 	}
 
-	clubs.leaveAllclubs = async function (uid) {
-		const clubs = await db.getSortedSetRange('clubs:createtime', 0, -1);
+	Groups.leaveAllGroups = async function (uid) {
+		const groups = await db.getSortedSetRange('groups:createtime', 0, -1);
 		await Promise.all([
-			clubs.leave(clubs, uid),
-			clubs.rejectMembership(clubs, uid),
+			Groups.leave(groups, uid),
+			Groups.rejectMembership(groups, uid),
 		]);
 	};
 
-	clubs.kick = async function (uid, clubName, isOwner) {
+	Groups.kick = async function (uid, groupName, isOwner) {
 		if (isOwner) {
 			// If the owners set only contains one member, error out!
-			const numOwners = await db.setCount(`club:${clubName}:owners`);
+			const numOwners = await db.setCount(`group:${groupName}:owners`);
 			if (numOwners <= 1) {
-				throw new Error('[[error:club-needs-owner]]');
+				throw new Error('[[error:group-needs-owner]]');
 			}
 		}
-		await clubs.leave(clubName, uid);
+		await Groups.leave(groupName, uid);
 	};
 };

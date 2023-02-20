@@ -13,96 +13,96 @@ const intFields = [
 	'userTitleEnabled', 'disableJoinRequests', 'disableLeave',
 ];
 
-module.exports = function (Clubs) {
-	Clubs.getClubsFields = async function (clubNames, fields) {
-		if (!Array.isArray(clubNames) || !clubNames.length) {
+module.exports = function (Groups) {
+	Groups.getGroupsFields = async function (groupNames, fields) {
+		if (!Array.isArray(groupNames) || !groupNames.length) {
 			return [];
 		}
 
-		const ephemeralIdx = clubNames.reduce((memo, cur, idx) => {
-			if (Clubs.ephemeralClubs.includes(cur)) {
+		const ephemeralIdx = groupNames.reduce((memo, cur, idx) => {
+			if (Groups.ephemeralGroups.includes(cur)) {
 				memo.push(idx);
 			}
 			return memo;
 		}, []);
 
-		const keys = clubNames.map(clubName => `club:${clubName}`);
-		const clubData = await db.getObjects(keys, fields);
+		const keys = groupNames.map(groupName => `group:${groupName}`);
+		const groupData = await db.getObjects(keys, fields);
 		if (ephemeralIdx.length) {
 			ephemeralIdx.forEach((idx) => {
-				clubData[idx] = Clubs.getEphemeralClub(clubNames[idx]);
+				groupData[idx] = Groups.getEphemeralGroup(groupNames[idx]);
 			});
 		}
 
-		clubData.forEach(club => modifyClub(club, fields));
+		groupData.forEach(group => modifyGroup(group, fields));
 
-		const results = await plugins.hooks.fire('filter:clubs.get', { clubs: clubData });
-		return results.clubs;
+		const results = await plugins.hooks.fire('filter:groups.get', { groups: groupData });
+		return results.groups;
 	};
 
-	Clubs.getClubsData = async function (clubNames) {
-		return await Clubs.getClubsFields(clubNames, []);
+	Groups.getGroupsData = async function (groupNames) {
+		return await Groups.getGroupsFields(groupNames, []);
 	};
 
-	Clubs.getClubData = async function (clubName) {
-		const clubsData = await Clubs.getClubsData([clubName]);
-		return Array.isArray(clubsData) && clubsData[0] ? clubsData[0] : null;
+	Groups.getGroupData = async function (groupName) {
+		const groupsData = await Groups.getGroupsData([groupName]);
+		return Array.isArray(groupsData) && groupsData[0] ? groupsData[0] : null;
 	};
 
-	Clubs.getClubField = async function (clubName, field) {
-		const clubData = await Clubs.getClubFields(clubName, [field]);
-		return clubData ? clubData[field] : null;
+	Groups.getGroupField = async function (groupName, field) {
+		const groupData = await Groups.getGroupFields(groupName, [field]);
+		return groupData ? groupData[field] : null;
 	};
 
-	Clubs.getClubFields = async function (clubName, fields) {
-		const clubs = await Clubs.getClubsFields([clubName], fields);
-		return clubs ? clubs[0] : null;
+	Groups.getGroupFields = async function (groupName, fields) {
+		const groups = await Groups.getGroupsFields([groupName], fields);
+		return groups ? groups[0] : null;
 	};
 
-	Clubs.setClubField = async function (clubName, field, value) {
-		await db.setObjectField(`club:${clubName}`, field, value);
-		plugins.hooks.fire('action:club.set', { field: field, value: value, type: 'set' });
+	Groups.setGroupField = async function (groupName, field, value) {
+		await db.setObjectField(`group:${groupName}`, field, value);
+		plugins.hooks.fire('action:group.set', { field: field, value: value, type: 'set' });
 	};
 };
 
-function modifyClub(club, fields) {
-	if (club) {
-		db.parseIntFields(club, intFields, fields);
+function modifyGroup(group, fields) {
+	if (group) {
+		db.parseIntFields(group, intFields, fields);
 
-		escapeClubData(club);
-		club.userTitleEnabled = ([null, undefined].includes(club.userTitleEnabled)) ? 1 : club.userTitleEnabled;
-		club.labelColor = validator.escape(String(club.labelColor || '#000000'));
-		club.textColor = validator.escape(String(club.textColor || '#ffffff'));
-		club.icon = validator.escape(String(club.icon || ''));
-		club.createtimeISO = utils.toISOString(club.createtime);
-		club.private = ([null, undefined].includes(club.private)) ? 1 : club.private;
-		club.memberPostCids = club.memberPostCids || '';
-		club.memberPostCidsArray = club.memberPostCids.split(',').map(cid => parseInt(cid, 10)).filter(Boolean);
+		escapeGroupData(group);
+		group.userTitleEnabled = ([null, undefined].includes(group.userTitleEnabled)) ? 1 : group.userTitleEnabled;
+		group.labelColor = validator.escape(String(group.labelColor || '#000000'));
+		group.textColor = validator.escape(String(group.textColor || '#ffffff'));
+		group.icon = validator.escape(String(group.icon || ''));
+		group.createtimeISO = utils.toISOString(group.createtime);
+		group.private = ([null, undefined].includes(group.private)) ? 1 : group.private;
+		group.memberPostCids = group.memberPostCids || '';
+		group.memberPostCidsArray = group.memberPostCids.split(',').map(cid => parseInt(cid, 10)).filter(Boolean);
 
-		club['cover:thumb:url'] = club['cover:thumb:url'] || club['cover:url'];
+		group['cover:thumb:url'] = group['cover:thumb:url'] || group['cover:url'];
 
-		if (club['cover:url']) {
-			club['cover:url'] = club['cover:url'].startsWith('http') ? club['cover:url'] : (nconf.get('relative_path') + club['cover:url']);
+		if (group['cover:url']) {
+			group['cover:url'] = group['cover:url'].startsWith('http') ? group['cover:url'] : (nconf.get('relative_path') + group['cover:url']);
 		} else {
-			club['cover:url'] = require('../coverPhoto').getDefaultClubCover(club.name);
+			group['cover:url'] = require('../coverPhoto').getDefaultGroupCover(group.name);
 		}
 
-		if (club['cover:thumb:url']) {
-			club['cover:thumb:url'] = club['cover:thumb:url'].startsWith('http') ? club['cover:thumb:url'] : (nconf.get('relative_path') + club['cover:thumb:url']);
+		if (group['cover:thumb:url']) {
+			group['cover:thumb:url'] = group['cover:thumb:url'].startsWith('http') ? group['cover:thumb:url'] : (nconf.get('relative_path') + group['cover:thumb:url']);
 		} else {
-			club['cover:thumb:url'] = require('../coverPhoto').getDefaultClubCover(club.name);
+			group['cover:thumb:url'] = require('../coverPhoto').getDefaultGroupCover(group.name);
 		}
 
-		club['cover:position'] = validator.escape(String(club['cover:position'] || '50% 50%'));
+		group['cover:position'] = validator.escape(String(group['cover:position'] || '50% 50%'));
 	}
 }
 
-function escapeClubData(club) {
-	if (club) {
-		club.nameEncoded = encodeURIComponent(club.name);
-		club.displayName = validator.escape(String(club.name));
-		club.description = validator.escape(String(club.description || ''));
-		club.userTitle = validator.escape(String(club.userTitle || ''));
-		club.userTitleEscaped = translator.escape(club.userTitle);
+function escapeGroupData(group) {
+	if (group) {
+		group.nameEncoded = encodeURIComponent(group.name);
+		group.displayName = validator.escape(String(group.name));
+		group.description = validator.escape(String(group.description || ''));
+		group.userTitle = validator.escape(String(group.userTitle || ''));
+		group.userTitleEscaped = translator.escape(group.userTitle);
 	}
 }

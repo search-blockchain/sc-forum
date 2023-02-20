@@ -6,138 +6,138 @@ const db = require('../database');
 const user = require('../user');
 const cache = require('../cache');
 
-module.exports = function (clubs) {
-	clubs.getMembers = async function (clubName, start, stop) {
-		return await db.getSortedSetRevRange(`club:${clubName}:members`, start, stop);
+module.exports = function (Groups) {
+	Groups.getMembers = async function (groupName, start, stop) {
+		return await db.getSortedSetRevRange(`group:${groupName}:members`, start, stop);
 	};
 
-	clubs.getMemberUsers = async function (clubNames, start, stop) {
-		async function get(clubName) {
-			const uids = await clubs.getMembers(clubName, start, stop);
+	Groups.getMemberUsers = async function (groupNames, start, stop) {
+		async function get(groupName) {
+			const uids = await Groups.getMembers(groupName, start, stop);
 			return await user.getUsersFields(uids, ['uid', 'username', 'picture', 'userslug']);
 		}
-		return await Promise.all(clubNames.map(name => get(name)));
+		return await Promise.all(groupNames.map(name => get(name)));
 	};
 
-	clubs.getMembersOfclubs = async function (clubNames) {
-		return await db.getSortedSetsMembers(clubNames.map(name => `club:${name}:members`));
+	Groups.getMembersOfGroups = async function (groupNames) {
+		return await db.getSortedSetsMembers(groupNames.map(name => `group:${name}:members`));
 	};
 
-	clubs.isMember = async function (uid, clubName) {
-		if (!uid || parseInt(uid, 10) <= 0 || !clubName) {
+	Groups.isMember = async function (uid, groupName) {
+		if (!uid || parseInt(uid, 10) <= 0 || !groupName) {
 			return false;
 		}
 
-		const cacheKey = `${uid}:${clubName}`;
-		let isMember = clubs.cache.get(cacheKey);
+		const cacheKey = `${uid}:${groupName}`;
+		let isMember = Groups.cache.get(cacheKey);
 		if (isMember !== undefined) {
 			return isMember;
 		}
-		isMember = await db.isSortedSetMember(`club:${clubName}:members`, uid);
-		clubs.cache.set(cacheKey, isMember);
+		isMember = await db.isSortedSetMember(`group:${groupName}:members`, uid);
+		Groups.cache.set(cacheKey, isMember);
 		return isMember;
 	};
 
-	clubs.isMembers = async function (uids, clubName) {
-		if (!clubName || !uids.length) {
+	Groups.isMembers = async function (uids, groupName) {
+		if (!groupName || !uids.length) {
 			return uids.map(() => false);
 		}
 
-		if (clubName === 'guests') {
+		if (groupName === 'guests') {
 			return uids.map(uid => parseInt(uid, 10) === 0);
 		}
 
 		const cachedData = {};
-		const nonCachedUids = uids.filter(uid => filterNonCached(cachedData, uid, clubName));
+		const nonCachedUids = uids.filter(uid => filterNonCached(cachedData, uid, groupName));
 
 		if (!nonCachedUids.length) {
-			return uids.map(uid => cachedData[`${uid}:${clubName}`]);
+			return uids.map(uid => cachedData[`${uid}:${groupName}`]);
 		}
 
-		const isMembers = await db.isSortedSetMembers(`club:${clubName}:members`, nonCachedUids);
+		const isMembers = await db.isSortedSetMembers(`group:${groupName}:members`, nonCachedUids);
 		nonCachedUids.forEach((uid, index) => {
-			cachedData[`${uid}:${clubName}`] = isMembers[index];
-			clubs.cache.set(`${uid}:${clubName}`, isMembers[index]);
+			cachedData[`${uid}:${groupName}`] = isMembers[index];
+			Groups.cache.set(`${uid}:${groupName}`, isMembers[index]);
 		});
-		return uids.map(uid => cachedData[`${uid}:${clubName}`]);
+		return uids.map(uid => cachedData[`${uid}:${groupName}`]);
 	};
 
-	clubs.isMemberOfclubs = async function (uid, clubs) {
-		if (!uid || parseInt(uid, 10) <= 0 || !clubs.length) {
-			return clubs.map(clubName => clubName === 'guests');
+	Groups.isMemberOfGroups = async function (uid, groups) {
+		if (!uid || parseInt(uid, 10) <= 0 || !groups.length) {
+			return groups.map(groupName => groupName === 'guests');
 		}
 		const cachedData = {};
-		const nonCachedclubs = clubs.filter(clubName => filterNonCached(cachedData, uid, clubName));
+		const nonCachedGroups = groups.filter(groupName => filterNonCached(cachedData, uid, groupName));
 
-		if (!nonCachedclubs.length) {
-			return clubs.map(clubName => cachedData[`${uid}:${clubName}`]);
+		if (!nonCachedGroups.length) {
+			return groups.map(groupName => cachedData[`${uid}:${groupName}`]);
 		}
-		const nonCachedclubsMemberSets = nonCachedclubs.map(clubName => `club:${clubName}:members`);
-		const isMembers = await db.isMemberOfSortedSets(nonCachedclubsMemberSets, uid);
-		nonCachedclubs.forEach((clubName, index) => {
-			cachedData[`${uid}:${clubName}`] = isMembers[index];
-			clubs.cache.set(`${uid}:${clubName}`, isMembers[index]);
+		const nonCachedGroupsMemberSets = nonCachedGroups.map(groupName => `group:${groupName}:members`);
+		const isMembers = await db.isMemberOfSortedSets(nonCachedGroupsMemberSets, uid);
+		nonCachedGroups.forEach((groupName, index) => {
+			cachedData[`${uid}:${groupName}`] = isMembers[index];
+			Groups.cache.set(`${uid}:${groupName}`, isMembers[index]);
 		});
 
-		return clubs.map(clubName => cachedData[`${uid}:${clubName}`]);
+		return groups.map(groupName => cachedData[`${uid}:${groupName}`]);
 	};
 
-	function filterNonCached(cachedData, uid, clubName) {
-		const isMember = clubs.cache.get(`${uid}:${clubName}`);
+	function filterNonCached(cachedData, uid, groupName) {
+		const isMember = Groups.cache.get(`${uid}:${groupName}`);
 		const isInCache = isMember !== undefined;
 		if (isInCache) {
-			cachedData[`${uid}:${clubName}`] = isMember;
+			cachedData[`${uid}:${groupName}`] = isMember;
 		}
 		return !isInCache;
 	}
 
-	clubs.isMemberOfAny = async function (uid, clubs) {
-		if (!clubs.length) {
+	Groups.isMemberOfAny = async function (uid, groups) {
+		if (!groups.length) {
 			return false;
 		}
-		const isMembers = await clubs.isMemberOfclubs(uid, clubs);
+		const isMembers = await Groups.isMemberOfGroups(uid, groups);
 		return isMembers.includes(true);
 	};
 
-	clubs.getMemberCount = async function (clubName) {
-		const count = await db.getObjectField(`club:${clubName}`, 'memberCount');
+	Groups.getMemberCount = async function (groupName) {
+		const count = await db.getObjectField(`group:${groupName}`, 'memberCount');
 		return parseInt(count, 10);
 	};
 
-	clubs.isMemberOfclubList = async function (uid, clubListKey) {
-		let clubNames = await getclubNames(clubListKey);
-		clubNames = clubs.removeEphemeralclubs(clubNames);
-		if (!clubNames.length) {
+	Groups.isMemberOfGroupList = async function (uid, groupListKey) {
+		let groupNames = await getGroupNames(groupListKey);
+		groupNames = Groups.removeEphemeralGroups(groupNames);
+		if (!groupNames.length) {
 			return false;
 		}
 
-		const isMembers = await clubs.isMemberOfclubs(uid, clubNames);
+		const isMembers = await Groups.isMemberOfGroups(uid, groupNames);
 		return isMembers.includes(true);
 	};
 
-	clubs.isMemberOfclubsList = async function (uid, clubListKeys) {
-		const members = await getclubNames(clubListKeys);
+	Groups.isMemberOfGroupsList = async function (uid, groupListKeys) {
+		const members = await getGroupNames(groupListKeys);
 
-		let uniqueclubs = _.uniq(_.flatten(members));
-		uniqueclubs = clubs.removeEphemeralclubs(uniqueclubs);
+		let uniqueGroups = _.uniq(_.flatten(members));
+		uniqueGroups = Groups.removeEphemeralGroups(uniqueGroups);
 
-		const isMembers = await clubs.isMemberOfclubs(uid, uniqueclubs);
-		const isclubMember = _.zipObject(uniqueclubs, isMembers);
+		const isMembers = await Groups.isMemberOfGroups(uid, uniqueGroups);
+		const isGroupMember = _.zipObject(uniqueGroups, isMembers);
 
-		return members.map(clubNames => !!clubNames.find(name => isclubMember[name]));
+		return members.map(groupNames => !!groupNames.find(name => isGroupMember[name]));
 	};
 
-	clubs.isMembersOfclubList = async function (uids, clubListKey) {
+	Groups.isMembersOfGroupList = async function (uids, groupListKey) {
 		const results = uids.map(() => false);
 
-		let clubNames = await getclubNames(clubListKey);
-		clubNames = clubs.removeEphemeralclubs(clubNames);
-		if (!clubNames.length) {
+		let groupNames = await getGroupNames(groupListKey);
+		groupNames = Groups.removeEphemeralGroups(groupNames);
+		if (!groupNames.length) {
 			return results;
 		}
-		const isclubMembers = await Promise.all(clubNames.map(name => clubs.isMembers(uids, name)));
+		const isGroupMembers = await Promise.all(groupNames.map(name => Groups.isMembers(uids, name)));
 
-		isclubMembers.forEach((isMembers) => {
+		isGroupMembers.forEach((isMembers) => {
 			results.forEach((isMember, index) => {
 				if (!isMember && isMembers[index]) {
 					results[index] = true;
@@ -147,29 +147,29 @@ module.exports = function (clubs) {
 		return results;
 	};
 
-	async function getclubNames(keys) {
+	async function getGroupNames(keys) {
 		const isArray = Array.isArray(keys);
 		keys = isArray ? keys : [keys];
 
 		const cachedData = {};
-		const nonCachedKeys = keys.filter((clubName) => {
-			const clubMembers = cache.get(`club:${clubName}:members`);
-			const isInCache = clubMembers !== undefined;
+		const nonCachedKeys = keys.filter((groupName) => {
+			const groupMembers = cache.get(`group:${groupName}:members`);
+			const isInCache = groupMembers !== undefined;
 			if (isInCache) {
-				cachedData[clubName] = clubMembers;
+				cachedData[groupName] = groupMembers;
 			}
 			return !isInCache;
 		});
 
 		if (!nonCachedKeys.length) {
-			return isArray ? keys.map(clubName => cachedData[clubName]) : cachedData[keys[0]];
+			return isArray ? keys.map(groupName => cachedData[groupName]) : cachedData[keys[0]];
 		}
-		const clubMembers = await db.getSortedSetsMembers(nonCachedKeys.map(name => `club:${name}:members`));
+		const groupMembers = await db.getSortedSetsMembers(nonCachedKeys.map(name => `group:${name}:members`));
 
-		nonCachedKeys.forEach((clubName, index) => {
-			cachedData[clubName] = clubMembers[index];
-			cache.set(`club:${clubName}:members`, clubMembers[index]);
+		nonCachedKeys.forEach((groupName, index) => {
+			cachedData[groupName] = groupMembers[index];
+			cache.set(`group:${groupName}:members`, groupMembers[index]);
 		});
-		return isArray ? keys.map(clubName => cachedData[clubName]) : cachedData[keys[0]];
+		return isArray ? keys.map(groupName => cachedData[groupName]) : cachedData[keys[0]];
 	}
 };

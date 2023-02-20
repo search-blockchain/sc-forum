@@ -7,16 +7,16 @@ const user = require('../user');
 const plugins = require('../plugins');
 const cache = require('../cache');
 
-module.exports = function (clubs) {
-	clubs.join = async function (clubNames, uid) {
-		if (!clubNames) {
+module.exports = function (Groups) {
+	Groups.join = async function (groupNames, uid) {
+		if (!groupNames) {
 			throw new Error('[[error:invalid-data]]');
 		}
-		if (Array.isArray(clubNames) && !clubNames.length) {
+		if (Array.isArray(groupNames) && !groupNames.length) {
 			return;
 		}
-		if (!Array.isArray(clubNames)) {
-			clubNames = [clubNames];
+		if (!Array.isArray(groupNames)) {
+			groupNames = [groupNames];
 		}
 
 		if (!uid) {
@@ -24,86 +24,86 @@ module.exports = function (clubs) {
 		}
 
 		const [isMembers, exists, isAdmin] = await Promise.all([
-			clubs.isMemberOfclubs(uid, clubNames),
-			clubs.exists(clubNames),
+			Groups.isMemberOfGroups(uid, groupNames),
+			Groups.exists(groupNames),
 			user.isAdministrator(uid),
 		]);
 
-		const clubsToCreate = clubNames.filter((clubName, index) => clubName && !exists[index]);
-		const clubsToJoin = clubNames.filter((clubName, index) => !isMembers[index]);
+		const groupsToCreate = groupNames.filter((groupName, index) => groupName && !exists[index]);
+		const groupsToJoin = groupNames.filter((groupName, index) => !isMembers[index]);
 
-		if (!clubsToJoin.length) {
+		if (!groupsToJoin.length) {
 			return;
 		}
-		await createNonExistingclubs(clubsToCreate);
+		await createNonExistingGroups(groupsToCreate);
 
 		const promises = [
-			db.sortedSetsAdd(clubsToJoin.map(clubName => `club:${clubName}:members`), Date.now(), uid),
-			db.incrObjectField(clubsToJoin.map(clubName => `club:${clubName}`), 'memberCount'),
+			db.sortedSetsAdd(groupsToJoin.map(groupName => `group:${groupName}:members`), Date.now(), uid),
+			db.incrObjectField(groupsToJoin.map(groupName => `group:${groupName}`), 'memberCount'),
 		];
 		if (isAdmin) {
-			promises.push(db.setsAdd(clubsToJoin.map(clubName => `club:${clubName}:owners`), uid));
+			promises.push(db.setsAdd(groupsToJoin.map(groupName => `group:${groupName}:owners`), uid));
 		}
 
 		await Promise.all(promises);
 
-		clubs.clearCache(uid, clubsToJoin);
-		cache.del(clubsToJoin.map(name => `club:${name}:members`));
+		Groups.clearCache(uid, groupsToJoin);
+		cache.del(groupsToJoin.map(name => `group:${name}:members`));
 
-		const clubData = await clubs.getclubsFields(clubsToJoin, ['name', 'hidden', 'memberCount']);
-		const visibleclubs = clubData.filter(clubData => clubData && !clubData.hidden);
+		const groupData = await Groups.getGroupsFields(groupsToJoin, ['name', 'hidden', 'memberCount']);
+		const visibleGroups = groupData.filter(groupData => groupData && !groupData.hidden);
 
-		if (visibleclubs.length) {
+		if (visibleGroups.length) {
 			await db.sortedSetAdd(
-				'clubs:visible:memberCount',
-				visibleclubs.map(clubData => clubData.memberCount),
-				visibleclubs.map(clubData => clubData.name)
+				'groups:visible:memberCount',
+				visibleGroups.map(groupData => groupData.memberCount),
+				visibleGroups.map(groupData => groupData.name)
 			);
 		}
 
-		await setclubTitleIfNotSet(clubsToJoin, uid);
+		await setGroupTitleIfNotSet(groupsToJoin, uid);
 
-		plugins.hooks.fire('action:club.join', {
-			clubNames: clubsToJoin,
+		plugins.hooks.fire('action:group.join', {
+			groupNames: groupsToJoin,
 			uid: uid,
 		});
 	};
 
-	async function createNonExistingclubs(clubsToCreate) {
-		if (!clubsToCreate.length) {
+	async function createNonExistingGroups(groupsToCreate) {
+		if (!groupsToCreate.length) {
 			return;
 		}
 
-		for (const clubName of clubsToCreate) {
+		for (const groupName of groupsToCreate) {
 			try {
 				// eslint-disable-next-line no-await-in-loop
-				await clubs.create({
-					name: clubName,
+				await Groups.create({
+					name: groupName,
 					hidden: 1,
 				});
 			} catch (err) {
-				if (err && err.message !== '[[error:club-already-exists]]') {
-					winston.error(`[clubs.join] Could not create new hidden club (${clubName})\n${err.stack}`);
+				if (err && err.message !== '[[error:group-already-exists]]') {
+					winston.error(`[groups.join] Could not create new hidden group (${groupName})\n${err.stack}`);
 					throw err;
 				}
 			}
 		}
 	}
 
-	async function setclubTitleIfNotSet(clubNames, uid) {
-		const ignore = ['registered-users', 'verified-users', 'unverified-users', clubs.BANNED_USERS];
-		clubNames = clubNames.filter(
-			clubName => !ignore.includes(clubName) && !clubs.isPrivilegeclub(clubName)
+	async function setGroupTitleIfNotSet(groupNames, uid) {
+		const ignore = ['registered-users', 'verified-users', 'unverified-users', Groups.BANNED_USERS];
+		groupNames = groupNames.filter(
+			groupName => !ignore.includes(groupName) && !Groups.isPrivilegeGroup(groupName)
 		);
-		if (!clubNames.length) {
+		if (!groupNames.length) {
 			return;
 		}
 
-		const currentTitle = await db.getObjectField(`user:${uid}`, 'clubTitle');
+		const currentTitle = await db.getObjectField(`user:${uid}`, 'groupTitle');
 		if (currentTitle || currentTitle === '') {
 			return;
 		}
 
-		await user.setUserField(uid, 'clubTitle', JSON.stringify(clubNames));
+		await user.setUserField(uid, 'groupTitle', JSON.stringify(groupNames));
 	}
 };
