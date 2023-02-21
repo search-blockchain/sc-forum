@@ -5,9 +5,9 @@ const plugins = require('../plugins');
 const slugify = require('../slugify');
 const db = require('../database');
 
-module.exports = function (Clubs) {
-	Clubs.create = async function (data) {
-		const isSystem = isSystemClub(data);
+module.exports = function (Groups) {
+	Groups.create = async function (data) {
+		const isSystem = isSystemGroup(data);
 		const timestamp = data.timestamp || Date.now();
 		let disableJoinRequests = parseInt(data.disableJoinRequests, 10) === 1 ? 1 : 0;
 		if (data.name === 'administrators') {
@@ -16,16 +16,16 @@ module.exports = function (Clubs) {
 		const disableLeave = parseInt(data.disableLeave, 10) === 1 ? 1 : 0;
 		const isHidden = parseInt(data.hidden, 10) === 1;
 
-		Clubs.validateClubName(data.name);
+		Groups.validateGroupName(data.name);
 
-		const exists = await meta.userOrClubExists(data.name);
+		const exists = await meta.userOrGroupExists(data.name);
 		if (exists) {
-			throw new Error('[[error:club-already-exists]]');
+			throw new Error('[[error:group-already-exists]]');
 		}
 
 		const memberCount = data.hasOwnProperty('ownerUid') ? 1 : 0;
 		const isPrivate = data.hasOwnProperty('private') && data.private !== undefined ? parseInt(data.private, 10) === 1 : true;
-		let clubData = {
+		let groupData = {
 			name: data.name,
 			slug: slugify(data.name),
 			createtime: timestamp,
@@ -40,56 +40,56 @@ module.exports = function (Clubs) {
 			disableLeave: disableLeave,
 		};
 
-		await plugins.hooks.fire('filter:club.create', { club: clubData, data: data });
+		await plugins.hooks.fire('filter:group.create', { group: groupData, data: data });
 
-		await db.sortedSetAdd('clubs:createtime', clubData.createtime, clubData.name);
-		await db.setObject(`club:${clubData.name}`, clubData);
+		await db.sortedSetAdd('groups:createtime', groupData.createtime, groupData.name);
+		await db.setObject(`group:${groupData.name}`, groupData);
 
 		if (data.hasOwnProperty('ownerUid')) {
-			await db.setAdd(`club:${clubData.name}:owners`, data.ownerUid);
-			await db.sortedSetAdd(`club:${clubData.name}:members`, timestamp, data.ownerUid);
+			await db.setAdd(`group:${groupData.name}:owners`, data.ownerUid);
+			await db.sortedSetAdd(`group:${groupData.name}:members`, timestamp, data.ownerUid);
 		}
 
 		if (!isHidden && !isSystem) {
 			await db.sortedSetAddBulk([
-				['clubs:visible:createtime', timestamp, clubData.name],
-				['clubs:visible:memberCount', clubData.memberCount, clubData.name],
-				['clubs:visible:name', 0, `${clubData.name.toLowerCase()}:${clubData.name}`],
+				['groups:visible:createtime', timestamp, groupData.name],
+				['groups:visible:memberCount', groupData.memberCount, groupData.name],
+				['groups:visible:name', 0, `${groupData.name.toLowerCase()}:${groupData.name}`],
 			]);
 		}
 
-		await db.setObjectField('clubslug:clubname', clubData.slug, clubData.name);
+		await db.setObjectField('groupslug:groupname', groupData.slug, groupData.name);
 
-		clubData = await Clubs.getClubData(clubData.name);
-		plugins.hooks.fire('action:club.create', { club: clubData });
-		return clubData;
+		groupData = await Groups.getClubData(groupData.name);
+		plugins.hooks.fire('action:group.create', { group: groupData });
+		return groupData;
 	};
 
-	function isSystemClub(data) {
+	function isSystemGroup(data) {
 		return data.system === true || parseInt(data.system, 10) === 1 ||
-			Clubs.systemClubs.includes(data.name) ||
-			Clubs.isPrivilegeClub(data.name);
+			Groups.systemClubs.includes(data.name) ||
+			Groups.isPrivilegeClub(data.name);
 	}
 
-	Clubs.validateClubName = function (name) {
+	Groups.validateGroupName = function (name) {
 		if (!name) {
-			throw new Error('[[error:club-name-too-short]]');
+			throw new Error('[[error:group-name-too-short]]');
 		}
 
 		if (typeof name !== 'string') {
-			throw new Error('[[error:invalid-club-name]]');
+			throw new Error('[[error:invalid-group-name]]');
 		}
 
-		if (!Clubs.isPrivilegeClub(name) && name.length > meta.config.maximumClubNameLength) {
-			throw new Error('[[error:club-name-too-long]]');
+		if (!Groups.isPrivilegeClub(name) && name.length > meta.config.maximumGroupNameLength) {
+			throw new Error('[[error:group-name-too-long]]');
 		}
 
-		if (name === 'guests' || (!Clubs.isPrivilegeClub(name) && name.includes(':'))) {
-			throw new Error('[[error:invalid-club-name]]');
+		if (name === 'guests' || (!Groups.isPrivilegeClub(name) && name.includes(':'))) {
+			throw new Error('[[error:invalid-group-name]]');
 		}
 
 		if (name.includes('/') || !slugify(name)) {
-			throw new Error('[[error:invalid-club-name]]');
+			throw new Error('[[error:invalid-group-name]]');
 		}
 	};
 };

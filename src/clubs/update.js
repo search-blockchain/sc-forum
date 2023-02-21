@@ -12,15 +12,15 @@ const meta = require('../meta');
 const cache = require('../cache');
 
 
-module.exports = function (clubs) {
-	clubs.update = async function (clubName, values) {
-		const exists = await db.exists(`club:${clubName}`);
+module.exports = function (Groups) {
+	Groups.update = async function (groupName, values) {
+		const exists = await db.exists(`group:${groupName}`);
 		if (!exists) {
-			throw new Error('[[error:no-club]]');
+			throw new Error('[[error:no-group]]');
 		}
 
-		({ values } = await plugins.hooks.fire('filter:club.update', {
-			clubName: clubName,
+		({ values } = await plugins.hooks.fire('filter:group.update', {
+			groupName: groupName,
 			values: values,
 		}));
 
@@ -64,171 +64,171 @@ module.exports = function (clubs) {
 		}
 
 		if (values.hasOwnProperty('name')) {
-			await checkNameChange(clubName, values.name);
+			await checkNameChange(groupName, values.name);
 		}
 
 		if (values.hasOwnProperty('private')) {
-			await updatePrivacy(clubName, values.private);
+			await updatePrivacy(groupName, values.private);
 		}
 
 		if (values.hasOwnProperty('hidden')) {
-			await updateVisibility(clubName, values.hidden);
+			await updateVisibility(groupName, values.hidden);
 		}
 
 		if (values.hasOwnProperty('memberPostCids')) {
-			const validCids = await categories.getCidsByPrivilege('categories:cid', clubName, 'topics:read');
+			const validCids = await categories.getCidsByPrivilege('categories:cid', groupName, 'topics:read');
 			const cidsArray = values.memberPostCids.split(',').map(cid => parseInt(cid.trim(), 10)).filter(Boolean);
 			payload.memberPostCids = cidsArray.filter(cid => validCids.includes(cid)).join(',') || '';
 		}
 
-		await db.setObject(`club:${clubName}`, payload);
-		await clubs.renameclub(clubName, values.name);
+		await db.setObject(`group:${groupName}`, payload);
+		await Groups.renameGroup(groupName, values.name);
 
-		plugins.hooks.fire('action:club.update', {
-			name: clubName,
+		plugins.hooks.fire('action:group.update', {
+			name: groupName,
 			values: values,
 		});
 	};
 
-	async function updateVisibility(clubName, hidden) {
+	async function updateVisibility(groupName, hidden) {
 		if (hidden) {
 			await db.sortedSetRemoveBulk([
-				['clubs:visible:createtime', clubName],
-				['clubs:visible:memberCount', clubName],
-				['clubs:visible:name', `${clubName.toLowerCase()}:${clubName}`],
+				['groups:visible:createtime', groupName],
+				['groups:visible:memberCount', groupName],
+				['groups:visible:name', `${groupName.toLowerCase()}:${groupName}`],
 			]);
 			return;
 		}
-		const clubData = await db.getObjectFields(`club:${clubName}`, ['createtime', 'memberCount']);
+		const groupData = await db.getObjectFields(`group:${groupName}`, ['createtime', 'memberCount']);
 		await db.sortedSetAddBulk([
-			['clubs:visible:createtime', clubData.createtime, clubName],
-			['clubs:visible:memberCount', clubData.memberCount, clubName],
-			['clubs:visible:name', 0, `${clubName.toLowerCase()}:${clubName}`],
+			['groups:visible:createtime', groupData.createtime, groupName],
+			['groups:visible:memberCount', groupData.memberCount, groupName],
+			['groups:visible:name', 0, `${groupName.toLowerCase()}:${groupName}`],
 		]);
 	}
 
-	clubs.hide = async function (clubName) {
-		await showHide(clubName, 'hidden');
+	Groups.hide = async function (groupName) {
+		await showHide(groupName, 'hidden');
 	};
 
-	clubs.show = async function (clubName) {
-		await showHide(clubName, 'show');
+	Groups.show = async function (groupName) {
+		await showHide(groupName, 'show');
 	};
 
-	async function showHide(clubName, hidden) {
+	async function showHide(groupName, hidden) {
 		hidden = hidden === 'hidden';
 		await Promise.all([
-			db.setObjectField(`club:${clubName}`, 'hidden', hidden ? 1 : 0),
-			updateVisibility(clubName, hidden),
+			db.setObjectField(`group:${groupName}`, 'hidden', hidden ? 1 : 0),
+			updateVisibility(groupName, hidden),
 		]);
 	}
 
-	async function updatePrivacy(clubName, isPrivate) {
-		const clubData = await clubs.getclubFields(clubName, ['private']);
-		const currentlyPrivate = clubData.private === 1;
+	async function updatePrivacy(groupName, isPrivate) {
+		const groupData = await Groups.getGroupFields(groupName, ['private']);
+		const currentlyPrivate = groupData.private === 1;
 		if (!currentlyPrivate || currentlyPrivate === isPrivate) {
 			return;
 		}
-		const pendingUids = await db.getSetMembers(`club:${clubName}:pending`);
+		const pendingUids = await db.getSetMembers(`group:${groupName}:pending`);
 		if (!pendingUids.length) {
 			return;
 		}
 
-		winston.verbose(`[clubs.update] club is now public, automatically adding ${pendingUids.length} new members, who were pending prior.`);
+		winston.verbose(`[groups.update] Group is now public, automatically adding ${pendingUids.length} new members, who were pending prior.`);
 
 		for (const uid of pendingUids) {
 			/* eslint-disable no-await-in-loop */
-			await clubs.join(clubName, uid);
+			await Groups.join(groupName, uid);
 		}
-		await db.delete(`club:${clubName}:pending`);
+		await db.delete(`group:${groupName}:pending`);
 	}
 
 	async function checkNameChange(currentName, newName) {
-		if (clubs.isPrivilegeclub(newName)) {
-			throw new Error('[[error:invalid-club-name]]');
+		if (Groups.isPrivilegeClub(newName)) {
+			throw new Error('[[error:invalid-group-name]]');
 		}
 		const currentSlug = slugify(currentName);
 		const newSlug = slugify(newName);
 		if (currentName === newName || currentSlug === newSlug) {
 			return;
 		}
-		clubs.validateclubName(newName);
-		const [club, exists] = await Promise.all([
-			clubs.getclubData(currentName),
-			clubs.existsBySlug(newSlug),
+		Groups.validateGroupName(newName);
+		const [group, exists] = await Promise.all([
+			Groups.getClubData(currentName),
+			Groups.existsBySlug(newSlug),
 		]);
 
 		if (exists) {
-			throw new Error('[[error:club-already-exists]]');
+			throw new Error('[[error:group-already-exists]]');
 		}
 
-		if (!club) {
-			throw new Error('[[error:no-club]]');
+		if (!group) {
+			throw new Error('[[error:no-group]]');
 		}
 
-		if (club.system) {
-			throw new Error('[[error:not-allowed-to-rename-system-club]]');
+		if (group.system) {
+			throw new Error('[[error:not-allowed-to-rename-system-group]]');
 		}
 	}
 
-	clubs.renameclub = async function (oldName, newName) {
+	Groups.renameGroup = async function (oldName, newName) {
 		if (oldName === newName || !newName || String(newName).length === 0) {
 			return;
 		}
-		const club = await db.getObject(`club:${oldName}`);
-		if (!club) {
+		const group = await db.getObject(`group:${oldName}`);
+		if (!group) {
 			return;
 		}
 
-		const exists = await clubs.exists(newName);
+		const exists = await Groups.exists(newName);
 		if (exists) {
-			throw new Error('[[error:club-already-exists]]');
+			throw new Error('[[error:group-already-exists]]');
 		}
 
-		await updateMemberclubTitles(oldName, newName);
+		await updateMemberGroupTitles(oldName, newName);
 		await updateNavigationItems(oldName, newName);
 		await updateWidgets(oldName, newName);
 		await updateConfig(oldName, newName);
-		await db.setObject(`club:${oldName}`, { name: newName, slug: slugify(newName) });
-		await db.deleteObjectField('clubslug:clubname', club.slug);
-		await db.setObjectField('clubslug:clubname', slugify(newName), newName);
+		await db.setObject(`group:${oldName}`, { name: newName, slug: slugify(newName) });
+		await db.deleteObjectField('groupslug:groupname', group.slug);
+		await db.setObjectField('groupslug:groupname', slugify(newName), newName);
 
-		const allclubs = await db.getSortedSetRange('clubs:createtime', 0, -1);
-		const keys = allclubs.map(club => `club:${club}:members`);
-		await renameclubsMember(keys, oldName, newName);
+		const allGroups = await db.getSortedSetRange('groups:createtime', 0, -1);
+		const keys = allGroups.map(group => `group:${group}:members`);
+		await renameGroupsMember(keys, oldName, newName);
 		cache.del(keys);
 
-		await db.rename(`club:${oldName}`, `club:${newName}`);
-		await db.rename(`club:${oldName}:members`, `club:${newName}:members`);
-		await db.rename(`club:${oldName}:owners`, `club:${newName}:owners`);
-		await db.rename(`club:${oldName}:pending`, `club:${newName}:pending`);
-		await db.rename(`club:${oldName}:invited`, `club:${newName}:invited`);
-		await db.rename(`club:${oldName}:member:pids`, `club:${newName}:member:pids`);
+		await db.rename(`group:${oldName}`, `group:${newName}`);
+		await db.rename(`group:${oldName}:members`, `group:${newName}:members`);
+		await db.rename(`group:${oldName}:owners`, `group:${newName}:owners`);
+		await db.rename(`group:${oldName}:pending`, `group:${newName}:pending`);
+		await db.rename(`group:${oldName}:invited`, `group:${newName}:invited`);
+		await db.rename(`group:${oldName}:member:pids`, `group:${newName}:member:pids`);
 
-		await renameclubsMember(['clubs:createtime', 'clubs:visible:createtime', 'clubs:visible:memberCount'], oldName, newName);
-		await renameclubsMember(['clubs:visible:name'], `${oldName.toLowerCase()}:${oldName}`, `${newName.toLowerCase()}:${newName}`);
+		await renameGroupsMember(['groups:createtime', 'groups:visible:createtime', 'groups:visible:memberCount'], oldName, newName);
+		await renameGroupsMember(['groups:visible:name'], `${oldName.toLowerCase()}:${oldName}`, `${newName.toLowerCase()}:${newName}`);
 
-		plugins.hooks.fire('action:club.rename', {
+		plugins.hooks.fire('action:group.rename', {
 			old: oldName,
 			new: newName,
 		});
-		clubs.cache.reset();
+		Groups.cache.reset();
 	};
 
-	async function updateMemberclubTitles(oldName, newName) {
-		await batch.processSortedSet(`club:${oldName}:members`, async (uids) => {
+	async function updateMemberGroupTitles(oldName, newName) {
+		await batch.processSortedSet(`group:${oldName}:members`, async (uids) => {
 			let usersData = await user.getUsersData(uids);
-			usersData = usersData.filter(userData => userData && userData.clubTitleArray.includes(oldName));
+			usersData = usersData.filter(userData => userData && userData.groupTitleArray.includes(oldName));
 
 			usersData.forEach((userData) => {
-				userData.newTitleArray = userData.clubTitleArray.map(oldTitle => (oldTitle === oldName ? newName : oldTitle));
+				userData.newTitleArray = userData.groupTitleArray.map(oldTitle => (oldTitle === oldName ? newName : oldTitle));
 			});
 
-			await Promise.all(usersData.map(u => user.setUserField(u.uid, 'clubTitle', JSON.stringify(u.newTitleArray))));
+			await Promise.all(usersData.map(u => user.setUserField(u.uid, 'groupTitle', JSON.stringify(u.newTitleArray))));
 		}, {});
 	}
 
-	async function renameclubsMember(keys, oldName, newName) {
+	async function renameGroupsMember(keys, oldName, newName) {
 		const isMembers = await db.isMemberOfSortedSets(keys, oldName);
 		keys = keys.filter((key, index) => isMembers[index]);
 		if (!keys.length) {
@@ -243,8 +243,8 @@ module.exports = function (clubs) {
 		const navigation = require('../navigation/admin');
 		const navItems = await navigation.get();
 		navItems.forEach((navItem) => {
-			if (navItem && Array.isArray(navItem.clubs) && navItem.clubs.includes(oldName)) {
-				navItem.clubs.splice(navItem.clubs.indexOf(oldName), 1, newName);
+			if (navItem && Array.isArray(navItem.groups) && navItem.groups.includes(oldName)) {
+				navItem.groups.splice(navItem.groups.indexOf(oldName), 1, newName);
 			}
 		});
 		navigation.unescapeFields(navItems);
@@ -260,8 +260,8 @@ module.exports = function (clubs) {
 		data.areas.forEach((area) => {
 			area.widgets = area.data;
 			area.widgets.forEach((widget) => {
-				if (widget && widget.data && Array.isArray(widget.data.clubs) && widget.data.clubs.includes(oldName)) {
-					widget.data.clubs.splice(widget.data.clubs.indexOf(oldName), 1, newName);
+				if (widget && widget.data && Array.isArray(widget.data.groups) && widget.data.groups.includes(oldName)) {
+					widget.data.groups.splice(widget.data.groups.indexOf(oldName), 1, newName);
 				}
 			});
 		});
@@ -273,17 +273,17 @@ module.exports = function (clubs) {
 	}
 
 	async function updateConfig(oldName, newName) {
-		if (meta.config.clubsExemptFromPostQueue.includes(oldName)) {
-			meta.config.clubsExemptFromPostQueue.splice(
-				meta.config.clubsExemptFromPostQueue.indexOf(oldName), 1, newName
+		if (meta.config.groupsExemptFromPostQueue.includes(oldName)) {
+			meta.config.groupsExemptFromPostQueue.splice(
+				meta.config.groupsExemptFromPostQueue.indexOf(oldName), 1, newName
 			);
-			await meta.configs.set('clubsExemptFromPostQueue', meta.config.clubsExemptFromPostQueue);
+			await meta.configs.set('groupsExemptFromPostQueue', meta.config.groupsExemptFromPostQueue);
 		}
-		if (meta.config.clubsExemptFromMaintenanceMode.includes(oldName)) {
-			meta.config.clubsExemptFromMaintenanceMode.splice(
-				meta.config.clubsExemptFromMaintenanceMode.indexOf(oldName), 1, newName
+		if (meta.config.groupsExemptFromMaintenanceMode.includes(oldName)) {
+			meta.config.groupsExemptFromMaintenanceMode.splice(
+				meta.config.groupsExemptFromMaintenanceMode.indexOf(oldName), 1, newName
 			);
-			await meta.configs.set('clubsExemptFromMaintenanceMode', meta.config.clubsExemptFromMaintenanceMode);
+			await meta.configs.set('groupsExemptFromMaintenanceMode', meta.config.groupsExemptFromMaintenanceMode);
 		}
 	}
 };

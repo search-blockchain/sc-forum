@@ -41,7 +41,7 @@ Assert.group = helpers.try(async (req, res, next) => {
 });
 
 Assert.club = helpers.try(async (req, res, next) => {
-	const name = await clubs.getGroupNameByGroupSlug(req.params.slug);
+	const name = await clubs.getClubNameByClubSlug(req.params.slug);
 	if (!name || !await clubs.exists(name)) {
 		return controllerHelpers.formatApiResponse(404, res, new Error('[[error:no-group]]'));
 	}

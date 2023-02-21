@@ -8,21 +8,21 @@ const db = require('../database');
 const image = require('../image');
 const file = require('../file');
 
-module.exports = function (Clubs) {
+module.exports = function (Groups) {
 	const allowedTypes = ['image/png', 'image/jpeg', 'image/bmp'];
-	Clubs.updateCoverPosition = async function (clubName, position) {
-		if (!clubName) {
+	Groups.updateCoverPosition = async function (groupName, position) {
+		if (!groupName) {
 			throw new Error('[[error:invalid-data]]');
 		}
-		await Clubs.setClubField(clubName, 'cover:position', position);
+		await Groups.setGroupField(groupName, 'cover:position', position);
 	};
 
-	Clubs.updateCover = async function (uid, data) {
+	Groups.updateCover = async function (uid, data) {
 		let tempPath = data.file ? data.file.path : '';
 		try {
 			// Position only? That's fine
 			if (!data.imageData && !data.file && data.position) {
-				return await Clubs.updateCoverPosition(data.clubName, data.position);
+				return await Groups.updateCoverPosition(data.groupName, data.position);
 			}
 			const type = data.file ? data.file.type : image.mimeFromBase64(data.imageData);
 			if (!type || !allowedTypes.includes(type)) {
@@ -33,28 +33,28 @@ module.exports = function (Clubs) {
 				tempPath = await image.writeImageDataToTempFile(data.imageData);
 			}
 
-			const filename = `clubCover-${data.clubName}${path.extname(tempPath)}`;
+			const filename = `groupCover-${data.groupName}${path.extname(tempPath)}`;
 			const uploadData = await image.uploadImage(filename, 'files', {
 				path: tempPath,
 				uid: uid,
-				name: 'clubCover',
+				name: 'groupCover',
 			});
 			const { url } = uploadData;
-			await Clubs.setClubField(data.clubName, 'cover:url', url);
+			await Groups.setGroupField(data.groupName, 'cover:url', url);
 
 			await image.resizeImage({
 				path: tempPath,
 				width: 358,
 			});
-			const thumbUploadData = await image.uploadImage(`clubCoverThumb-${data.clubName}${path.extname(tempPath)}`, 'files', {
+			const thumbUploadData = await image.uploadImage(`groupCoverThumb-${data.groupName}${path.extname(tempPath)}`, 'files', {
 				path: tempPath,
 				uid: uid,
-				name: 'clubCover',
+				name: 'groupCover',
 			});
-			await Clubs.setClubField(data.clubName, 'cover:thumb:url', thumbUploadData.url);
+			await Groups.setGroupField(data.groupName, 'cover:thumb:url', thumbUploadData.url);
 
 			if (data.position) {
-				await Clubs.updateCoverPosition(data.clubName, data.position);
+				await Groups.updateCoverPosition(data.groupName, data.position);
 			}
 
 			return { url: url };
@@ -63,9 +63,9 @@ module.exports = function (Clubs) {
 		}
 	};
 
-	Clubs.removeCover = async function (data) {
+	Groups.removeCover = async function (data) {
 		const fields = ['cover:url', 'cover:thumb:url'];
-		const values = await Clubs.getClubFields(data.clubName, fields);
+		const values = await Groups.getGroupFields(data.groupName, fields);
 		await Promise.all(fields.map((field) => {
 			if (!values[field] || !values[field].startsWith(`${nconf.get('relative_path')}/assets/uploads/files/`)) {
 				return;
@@ -75,6 +75,6 @@ module.exports = function (Clubs) {
 			return file.delete(filePath);
 		}));
 
-		await db.deleteObjectFields(`club:${data.clubName}`, ['cover:url', 'cover:thumb:url', 'cover:position']);
+		await db.deleteObjectFields(`group:${data.groupName}`, ['cover:url', 'cover:thumb:url', 'cover:position']);
 	};
 };

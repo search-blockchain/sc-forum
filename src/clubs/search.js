@@ -3,56 +3,56 @@
 const user = require('../user');
 const db = require('../database');
 
-module.exports = function (clubs) {
-	clubs.search = async function (query, options) {
+module.exports = function (Groups) {
+	Groups.search = async function (query, options) {
 		if (!query) {
 			return [];
 		}
 		query = String(query).toLowerCase();
-		let clubNames = await db.getSortedSetRange('clubs:createtime', 0, -1);
-		if (!options.hideEphemeralclubs) {
-			clubNames = clubs.ephemeralclubs.concat(clubNames);
+		let groupNames = await db.getSortedSetRange('groups:createtime', 0, -1);
+		if (!options.hideEphemeralGroups) {
+			groupNames = Groups.ephemeralClubs.concat(groupNames);
 		}
-		clubNames = clubNames.filter(name => name.toLowerCase().includes(query) &&
-			name !== clubs.BANNED_USERS && // hide banned-users in searches
-			!clubs.isPrivilegeclub(name));
-		clubNames = clubNames.slice(0, 100);
+		groupNames = groupNames.filter(name => name.toLowerCase().includes(query) &&
+			name !== Groups.BANNED_USERS && // hide banned-users in searches
+			!Groups.isPrivilegeClub(name));
+		groupNames = groupNames.slice(0, 100);
 
-		let clubsData;
+		let groupsData;
 		if (options.showMembers) {
-			clubsData = await clubs.getclubsAndMembers(clubNames);
+			groupsData = await Groups.getClubsFromSet(groupNames);
 		} else {
-			clubsData = await clubs.getclubsData(clubNames);
+			groupsData = await Groups.getClubsData(groupNames);
 		}
-		clubsData = clubsData.filter(Boolean);
+		groupsData = groupsData.filter(Boolean);
 		if (options.filterHidden) {
-			clubsData = clubsData.filter(club => !club.hidden);
+			groupsData = groupsData.filter(group => !group.hidden);
 		}
-		return clubs.sort(options.sort, clubsData);
+		return Groups.sort(options.sort, groupsData);
 	};
 
-	clubs.sort = function (strategy, clubs) {
+	Groups.sort = function (strategy, groups) {
 		switch (strategy) {
 			case 'count':
-				clubs.sort((a, b) => a.slug > b.slug)
+				groups.sort((a, b) => a.slug > b.slug)
 					.sort((a, b) => b.memberCount - a.memberCount);
 				break;
 
 			case 'date':
-				clubs.sort((a, b) => b.createtime - a.createtime);
+				groups.sort((a, b) => b.createtime - a.createtime);
 				break;
 
 			case 'alpha': // intentional fall-through
 			default:
-				clubs.sort((a, b) => (a.slug > b.slug ? 1 : -1));
+				groups.sort((a, b) => (a.slug > b.slug ? 1 : -1));
 		}
 
-		return clubs;
+		return groups;
 	};
 
-	clubs.searchMembers = async function (data) {
+	Groups.searchMembers = async function (data) {
 		if (!data.query) {
-			const users = await clubs.getOwnersAndMembers(data.clubName, data.uid, 0, 19);
+			const users = await Groups.getOwnersAndMembers(data.groupName, data.uid, 0, 19);
 			return { users: users };
 		}
 
@@ -63,7 +63,7 @@ module.exports = function (clubs) {
 		});
 
 		const uids = results.users.map(user => user && user.uid);
-		const isOwners = await clubs.ownership.isOwners(uids, data.clubName);
+		const isOwners = await Groups.ownership.isOwners(uids, data.groupName);
 
 		results.users.forEach((user, index) => {
 			if (user) {

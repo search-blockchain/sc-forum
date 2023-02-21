@@ -8,95 +8,95 @@ const slugify = require('../slugify');
 const plugins = require('../plugins');
 const notifications = require('../notifications');
 
-module.exports = function (Club) {
-	Club.requestMembership = async function (clubName, uid) {
-		await inviteOrRequestMembership(clubName, uid, 'request');
+module.exports = function (Groups) {
+	Groups.requestMembership = async function (groupName, uid) {
+		await inviteOrRequestMembership(groupName, uid, 'request');
 		const { displayname } = await user.getUserFields(uid, ['username']);
 
 		const [notification, owners] = await Promise.all([
 			notifications.create({
-				type: 'club-request-membership',
-				bodyShort: `[[clubs:request.notification_title, ${displayname}]]`,
-				bodyLong: `[[clubs:request.notification_text, ${displayname}, ${clubName}]]`,
-				nid: `club:${clubName}:uid:${uid}:request`,
-				path: `/clubs/${slugify(clubName)}`,
+				type: 'group-request-membership',
+				bodyShort: `[[groups:request.notification_title, ${displayname}]]`,
+				bodyLong: `[[groups:request.notification_text, ${displayname}, ${groupName}]]`,
+				nid: `group:${groupName}:uid:${uid}:request`,
+				path: `/groups/${slugify(groupName)}`,
 				from: uid,
 			}),
-			Club.getOwners(clubName),
+			Groups.getOwners(groupName),
 		]);
 
 		await notifications.push(notification, owners);
 	};
 
-	Club.acceptMembership = async function (clubName, uid) {
-		await db.setsRemove([`club:${clubName}:pending`, `club:${clubName}:invited`], uid);
-		await Club.join(clubName, uid);
+	Groups.acceptMembership = async function (groupName, uid) {
+		await db.setsRemove([`group:${groupName}:pending`, `group:${groupName}:invited`], uid);
+		await Groups.join(groupName, uid);
 
 		const notification = await notifications.create({
-			type: 'club-invite',
-			bodyShort: `[[clubs:membership.accept.notification_title, ${clubName}]]`,
-			nid: `club:${clubName}:uid:${uid}:invite-accepted`,
-			path: `/clubs/${slugify(clubName)}`,
+			type: 'group-invite',
+			bodyShort: `[[groups:membership.accept.notification_title, ${groupName}]]`,
+			nid: `group:${groupName}:uid:${uid}:invite-accepted`,
+			path: `/groups/${slugify(groupName)}`,
 		});
 		await notifications.push(notification, [uid]);
 	};
 
-	Club.rejectMembership = async function (clubNames, uid) {
-		if (!Array.isArray(clubNames)) {
-			clubNames = [clubNames];
+	Groups.rejectMembership = async function (groupNames, uid) {
+		if (!Array.isArray(groupNames)) {
+			groupNames = [groupNames];
 		}
 		const sets = [];
-		clubNames.forEach(clubName => sets.push(`club:${clubName}:pending`, `club:${clubName}:invited`));
+		groupNames.forEach(groupName => sets.push(`group:${groupName}:pending`, `group:${groupName}:invited`));
 		await db.setsRemove(sets, uid);
 	};
 
-	Club.invite = async function (clubName, uids) {
+	Groups.invite = async function (groupName, uids) {
 		uids = Array.isArray(uids) ? uids : [uids];
-		uids = await inviteOrRequestMembership(clubName, uids, 'invite');
+		uids = await inviteOrRequestMembership(groupName, uids, 'invite');
 
 		const notificationData = await Promise.all(uids.map(uid => notifications.create({
-			type: 'club-invite',
-			bodyShort: `[[clubs:invited.notification_title, ${clubName}]]`,
+			type: 'group-invite',
+			bodyShort: `[[groups:invited.notification_title, ${groupName}]]`,
 			bodyLong: '',
-			nid: `club:${clubName}:uid:${uid}:invite`,
-			path: `/clubs/${slugify(clubName)}`,
+			nid: `group:${groupName}:uid:${uid}:invite`,
+			path: `/groups/${slugify(groupName)}`,
 		})));
 
 		await Promise.all(uids.map((uid, index) => notifications.push(notificationData[index], uid)));
 	};
 
-	async function inviteOrRequestMembership(clubName, uids, type) {
+	async function inviteOrRequestMembership(groupName, uids, type) {
 		uids = Array.isArray(uids) ? uids : [uids];
 		uids = uids.filter(uid => parseInt(uid, 10) > 0);
 		const [exists, isMember, isPending, isInvited] = await Promise.all([
-			Club.exists(clubName),
-			Club.isMembers(uids, clubName),
-			Club.isPending(uids, clubName),
-			Club.isInvited(uids, clubName),
+			Groups.exists(groupName),
+			Groups.isMembers(uids, groupName),
+			Groups.isPending(uids, groupName),
+			Groups.isInvited(uids, groupName),
 		]);
 
 		if (!exists) {
-			throw new Error('[[error:no-club]]');
+			throw new Error('[[error:no-group]]');
 		}
 
 		uids = uids.filter((uid, i) => !isMember[i] && ((type === 'invite' && !isInvited[i]) || (type === 'request' && !isPending[i])));
 
-		const set = type === 'invite' ? `club:${clubName}:invited` : `club:${clubName}:pending`;
+		const set = type === 'invite' ? `group:${groupName}:invited` : `group:${groupName}:pending`;
 		await db.setAdd(set, uids);
 		const hookName = type === 'invite' ? 'inviteMember' : 'requestMembership';
-		plugins.hooks.fire(`action:club.${hookName}`, {
-			clubName: clubName,
+		plugins.hooks.fire(`action:group.${hookName}`, {
+			groupName: groupName,
 			uids: uids,
 		});
 		return uids;
 	}
 
-	Club.isInvited = async function (uids, clubName) {
-		return await checkInvitePending(uids, `club:${clubName}:invited`);
+	Groups.isInvited = async function (uids, groupName) {
+		return await checkInvitePending(uids, `group:${groupName}:invited`);
 	};
 
-	Club.isPending = async function (uids, clubName) {
-		return await checkInvitePending(uids, `club:${clubName}:pending`);
+	Groups.isPending = async function (uids, groupName) {
+		return await checkInvitePending(uids, `group:${groupName}:pending`);
 	};
 
 	async function checkInvitePending(uids, set) {
@@ -108,10 +108,10 @@ module.exports = function (Club) {
 		return isArray ? uids.map(uid => !!map[uid]) : !!map[uids[0]];
 	}
 
-	Club.getPending = async function (clubName) {
-		if (!clubName) {
+	Groups.getPending = async function (groupName) {
+		if (!groupName) {
 			return [];
 		}
-		return await db.getSetMembers(`club:${clubName}:pending`);
+		return await db.getSetMembers(`group:${groupName}:pending`);
 	};
 };

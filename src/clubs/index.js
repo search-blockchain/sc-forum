@@ -5,113 +5,113 @@ const db = require('../database');
 const plugins = require('../plugins');
 const slugify = require('../slugify');
 
-const Club = module.exports;
+const Clubs = module.exports;
 
-require('./data')(Club);
-require('./create')(Club);
-require('./delete')(Club);
-require('./update')(Club);
-require('./invite')(Club);
-require('./membership')(Club);
-require('./ownership')(Club);
-require('./search')(Club);
-require('./cover')(Club);
-require('./posts')(Club);
-require('./user')(Club);
-require('./join')(Club);
-require('./leave')(Club);
-require('./cache')(Club);
+require('./data')(Clubs);
+require('./create')(Clubs);
+require('./delete')(Clubs);
+require('./update')(Clubs);
+require('./invite')(Clubs);
+require('./membership')(Clubs);
+require('./ownership')(Clubs);
+require('./search')(Clubs);
+require('./cover')(Clubs);
+require('./posts')(Clubs);
+require('./user')(Clubs);
+require('./join')(Clubs);
+require('./leave')(Clubs);
+require('./cache')(Clubs);
 
-Club.BANNED_USERS = 'banned-users';
+Clubs.BANNED_USERS = 'banned-users';
 
-Club.ephemeralClubs = ['guests', 'spiders'];
+Clubs.ephemeralClubs = ['guests', 'spiders'];
 
-Club.systemClubs = [
+Clubs.systemClubs = [
 	'registered-users',
 	'verified-users',
 	'unverified-users',
-	Club.BANNED_USERS,
+	Clubs.BANNED_USERS,
 	'administrators',
 	'Global Moderators',
 ];
 
-Club.getEphemeralClub = function (clubName) {
+Clubs.getEphemeralClub = function (groupName) {
 	return {
-		name: clubName,
-		slug: slugify(clubName),
+		name: groupName,
+		slug: slugify(groupName),
 		description: '',
 		hidden: 0,
 		system: 1,
 	};
 };
 
-Club.removeEphemeralClubs = function (clubs) {
-	for (let x = clubs.length; x >= 0; x -= 1) {
-		if (Club.ephemeralClubs.includes(clubs[x])) {
-			clubs.splice(x, 1);
+Clubs.removeEphemeralClubs = function (groups) {
+	for (let x = groups.length; x >= 0; x -= 1) {
+		if (Clubs.ephemeralClubs.includes(groups[x])) {
+			groups.splice(x, 1);
 		}
 	}
 
-	return clubs;
+	return groups;
 };
 
 const isPrivilegeClubRegex = /^cid:\d+:privileges:[\w\-:]+$/;
-Club.isPrivilegeClub = function (clubName) {
-	return isPrivilegeClubRegex.test(clubName);
+Clubs.isPrivilegeClub = function (groupName) {
+	return isPrivilegeClubRegex.test(groupName);
 };
 
-Club.getClubsFromSet = async function (set, start, stop) {
-	let clubNames;
-	if (set === 'clubs:visible:name') {
-		clubNames = await db.getSortedSetRangeByLex(set, '-', '+', start, stop - start + 1);
+Clubs.getClubsFromSet = async function (set, start, stop) {
+	let groupNames;
+	if (set === 'groups:visible:name') {
+		groupNames = await db.getSortedSetRangeByLex(set, '-', '+', start, stop - start + 1);
 	} else {
-		clubNames = await db.getSortedSetRevRange(set, start, stop);
+		groupNames = await db.getSortedSetRevRange(set, start, stop);
 	}
-	if (set === 'clubs:visible:name') {
-		clubNames = clubNames.map(name => name.split(':')[1]);
+	if (set === 'groups:visible:name') {
+		groupNames = groupNames.map(name => name.split(':')[1]);
 	}
 
-	return await Club.getClubsAndMembers(clubNames);
+	return await Clubs.getClubsFromSet(groupNames);
 };
 
-Club.getClubsBySort = async function (sort, start, stop) {
-	let set = 'clubs:visible:name';
+Clubs.getClubsBySort = async function (sort, start, stop) {
+	let set = 'groups:visible:name';
 	if (sort === 'count') {
-		set = 'clubs:visible:memberCount';
+		set = 'groups:visible:memberCount';
 	} else if (sort === 'date') {
-		set = 'clubs:visible:createtime';
+		set = 'groups:visible:createtime';
 	}
-	return await Club.getClubsFromSet(set, start, stop);
+	return await Clubs.getClubsFromSet(set, start, stop);
 };
 
-Club.getNonPrivilegeClubs = async function (set, start, stop) {
-	let clubNames = await db.getSortedSetRevRange(set, start, stop);
-	clubNames = clubNames.concat(Club.ephemeralClubs).filter(clubName => !Club.isPrivilegeClub(clubName));
-	const clubsData = await Club.getClubsData(clubNames);
-	return clubsData.filter(Boolean);
+Clubs.getNonPrivilegeClubs = async function (set, start, stop) {
+	let groupNames = await db.getSortedSetRevRange(set, start, stop);
+	groupNames = groupNames.concat(Clubs.ephemeralClubs).filter(groupName => !Clubs.isPrivilegeClub(groupName));
+	const groupsData = await Clubs.getClubsData(groupNames);
+	return groupsData.filter(Boolean);
 };
 
-Club.getClubs = async function (set, start, stop) {
+Clubs.getClubs = async function (set, start, stop) {
 	return await db.getSortedSetRevRange(set, start, stop);
 };
 
-Club.getClubsAndMembers = async function (clubNames) {
-	const [clubs, members] = await Promise.all([
-		Club.getClubsData(clubNames),
-		Club.getMemberUsers(clubNames, 0, 9),
+Clubs.getClubsFromSet = async function (groupNames) {
+	const [groups, members] = await Promise.all([
+		Clubs.getClubsData(groupNames),
+		Clubs.getMemberUsers(groupNames, 0, 9),
 	]);
-	clubs.forEach((club, index) => {
-		if (club) {
-			club.members = members[index] || [];
-			club.truncated = club.memberCount > club.members.length;
+	groups.forEach((group, index) => {
+		if (group) {
+			group.members = members[index] || [];
+			group.truncated = group.memberCount > group.members.length;
 		}
 	});
-	return clubs;
+	return groups;
 };
 
-Club.get = async function (clubName, options) {
-	if (!clubName) {
-		throw new Error('[[error:invalid-club]]');
+Clubs.get = async function (groupName, options) {
+	if (!groupName) {
+		throw new Error('[[error:invalid-group]]');
 	}
 
 	let stop = -1;
@@ -120,40 +120,40 @@ Club.get = async function (clubName, options) {
 		stop = (parseInt(options.userListCount, 10) || 4) - 1;
 	}
 
-	const [clubData, members, pending, invited, isMember, isPending, isInvited, isOwner] = await Promise.all([
-		Club.getClubData(clubName),
-		Club.getOwnersAndMembers(clubName, options.uid, 0, stop),
-		Club.getUsersFromSet(`club:${clubName}:pending`, ['username', 'userslug', 'picture']),
-		Club.getUsersFromSet(`club:${clubName}:invited`, ['username', 'userslug', 'picture']),
-		Club.isMember(options.uid, clubName),
-		Club.isPending(options.uid, clubName),
-		Club.isInvited(options.uid, clubName),
-		Club.ownership.isOwner(options.uid, clubName),
+	const [groupData, members, pending, invited, isMember, isPending, isInvited, isOwner] = await Promise.all([
+		Clubs.getClubData(groupName),
+		Clubs.getOwnersAndMembers(groupName, options.uid, 0, stop),
+		Clubs.getUsersFromSet(`group:${groupName}:pending`, ['username', 'userslug', 'picture']),
+		Clubs.getUsersFromSet(`group:${groupName}:invited`, ['username', 'userslug', 'picture']),
+		Clubs.isMember(options.uid, groupName),
+		Clubs.isPending(options.uid, groupName),
+		Clubs.isInvited(options.uid, groupName),
+		Clubs.ownership.isOwner(options.uid, groupName),
 	]);
 
-	if (!clubData) {
+	if (!groupData) {
 		return null;
 	}
-	const descriptionParsed = await plugins.hooks.fire('filter:parse.raw', String(clubData.description || ''));
-	clubData.descriptionParsed = descriptionParsed;
-	clubData.members = members;
-	clubData.membersNextStart = stop + 1;
-	clubData.pending = pending.filter(Boolean);
-	clubData.invited = invited.filter(Boolean);
-	clubData.isMember = isMember;
-	clubData.isPending = isPending;
-	clubData.isInvited = isInvited;
-	clubData.isOwner = isOwner;
-	const results = await plugins.hooks.fire('filter:club.get', { club: clubData });
-	return results.club;
+	const descriptionParsed = await plugins.hooks.fire('filter:parse.raw', String(groupData.description || ''));
+	groupData.descriptionParsed = descriptionParsed;
+	groupData.members = members;
+	groupData.membersNextStart = stop + 1;
+	groupData.pending = pending.filter(Boolean);
+	groupData.invited = invited.filter(Boolean);
+	groupData.isMember = isMember;
+	groupData.isPending = isPending;
+	groupData.isInvited = isInvited;
+	groupData.isOwner = isOwner;
+	const results = await plugins.hooks.fire('filter:group.get', { group: groupData });
+	return results.group;
 };
 
-Club.getOwners = async function (clubName) {
-	return await db.getSetMembers(`club:${clubName}:owners`);
+Clubs.getOwners = async function (groupName) {
+	return await db.getSetMembers(`group:${groupName}:owners`);
 };
 
-Club.getOwnersAndMembers = async function (clubName, uid, start, stop) {
-	const ownerUids = await db.getSetMembers(`club:${clubName}:owners`);
+Clubs.getOwnersAndMembers = async function (groupName, uid, start, stop) {
+	const ownerUids = await db.getSetMembers(`group:${groupName}:owners`);
 	const countToReturn = stop - start + 1;
 	const ownerUidsOnPage = ownerUids.slice(start, stop !== -1 ? stop + 1 : undefined);
 	const owners = await user.getUsers(ownerUidsOnPage, uid);
@@ -170,7 +170,7 @@ Club.getOwnersAndMembers = async function (clubName, uid, start, stop) {
 	memberStart = Math.max(0, memberStart);
 	memberStop = Math.max(0, memberStop);
 	async function addMembers(start, stop) {
-		let batch = await user.getUsersFromSet(`club:${clubName}:members`, uid, start, stop);
+		let batch = await user.getUsersFromSet(`group:${groupName}:members`, uid, start, stop);
 		if (!batch.length) {
 			done = true;
 		}
@@ -189,7 +189,7 @@ Club.getOwnersAndMembers = async function (clubName, uid, start, stop) {
 		}
 	}
 	returnUsers = countToReturn > 0 ? returnUsers.slice(0, countToReturn) : returnUsers;
-	const result = await plugins.hooks.fire('filter:club.getOwnersAndMembers', {
+	const result = await plugins.hooks.fire('filter:group.getOwnersAndMembers', {
 		users: returnUsers,
 		uid: uid,
 		start: start,
@@ -198,50 +198,50 @@ Club.getOwnersAndMembers = async function (clubName, uid, start, stop) {
 	return result.users;
 };
 
-Club.getByClubslug = async function (slug, options) {
+Clubs.getByClubSlug = async function (slug, options) {
 	options = options || {};
-	const clubName = await db.getObjectField('clubslug:clubname', slug);
-	if (!clubName) {
-		throw new Error('[[error:no-club]]');
+	const groupName = await db.getObjectField('groupslug:groupname', slug);
+	if (!groupName) {
+		throw new Error('[[error:no-group]]');
 	}
-	return await Club.get(clubName, options);
+	return await Clubs.get(groupName, options);
 };
 
-Club.getClubNameByClubSlug = async function (slug) {
-	return await db.getObjectField('clubslug:clubname', slug);
+Clubs.getClubNameByClubSlug = async function (slug) {
+	return await db.getObjectField('groupslug:groupname', slugify(slug));
 };
 
-Club.isPrivate = async function (clubName) {
-	return await isFieldOn(clubName, 'private');
+Clubs.isPrivate = async function (groupName) {
+	return await isFieldOn(groupName, 'private');
 };
 
-Club.isHidden = async function (clubName) {
-	return await isFieldOn(clubName, 'hidden');
+Clubs.isHidden = async function (groupName) {
+	return await isFieldOn(groupName, 'hidden');
 };
 
-async function isFieldOn(clubName, field) {
-	const value = await db.getObjectField(`club:${clubName}`, field);
+async function isFieldOn(groupName, field) {
+	const value = await db.getObjectField(`group:${groupName}`, field);
 	return parseInt(value, 10) === 1;
 }
 
-Club.exists = async function (name) {
+Clubs.exists = async function (name) {
 	if (Array.isArray(name)) {
-		const slugs = name.map(clubName => slugify(clubName));
-		const isMembersOfRealClubs = await db.isSortedSetMembers('clubs:createtime', name);
-		const isMembersOfEphemeralClubs = slugs.map(slug => Club.ephemeralClubs.includes(slug));
+		const slugs = name.map(groupName => slugify(groupName));
+		const isMembersOfRealClubs = await db.isSortedSetMembers('groups:createtime', name);
+		const isMembersOfEphemeralClubs = slugs.map(slug => Clubs.ephemeralClubs.includes(slug));
 		return name.map((n, index) => isMembersOfRealClubs[index] || isMembersOfEphemeralClubs[index]);
 	}
 	const slug = slugify(name);
-	const isMemberOfRealClubs = await db.isSortedSetMember('clubs:createtime', name);
-	const isMemberOfEphemeralClubs = Club.ephemeralClubs.includes(slug);
+	const isMemberOfRealClubs = await db.isSortedSetMember('groups:createtime', name);
+	const isMemberOfEphemeralClubs = Clubs.ephemeralClubs.includes(slug);
 	return isMemberOfRealClubs || isMemberOfEphemeralClubs;
 };
 
-Club.existsBySlug = async function (slug) {
+Clubs.existsBySlug = async function (slug) {
 	if (Array.isArray(slug)) {
-		return await db.isObjectFields('clubslug:clubname', slug);
+		return await db.isObjectFields('groupslug:groupname', slug);
 	}
-	return await db.isObjectField('clubslug:clubname', slug);
+	return await db.isObjectField('groupslug:groupname', slug);
 };
 
-require('../promisify')(Club);
+require('../promisify')(Clubs);
