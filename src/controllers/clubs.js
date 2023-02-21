@@ -184,8 +184,9 @@ clubsController.details = async function (req, res, next) {
 	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
 	
 	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
-		console.warn('未关联Cid')
+		console.warn('未关联Cid', req.uid)
 		res.render('clubs/topics', {
+			currentUID: req.uid,
 			title: `[[pages:clubs, ${groupData.displayName}]]`,
 			group: groupData,
 			category: [],
@@ -243,7 +244,7 @@ clubsController.details = async function (req, res, next) {
 	let query = getTempQuery({ cid: groupData.memberPostCidsArray[0], uid: req.uid})
 	const topicList = await categories.getCategoryById(query)
 	// console.log('按CID查询topic', topicList)
-	console.log('查看回复？', topicList.length, topicList.topics[2])
+	// console.log('查看回复？', topicList.length, topicList.topics[2])
 	// const ttid = 7
 	// const topicData = await topics.getTopicData(ttid)
 	// console.log('数据比对——完整帖子', topicData)
@@ -307,8 +308,8 @@ clubsController.details = async function (req, res, next) {
 	// console.log('完整topic数据', fullTopics)
 	
 	// console.log('group数据', groupData)
-
 	res.render('clubs/topics', {
+		currentUID: req.uid,
 		title: `[[pages:clubs, ${groupData.displayName}]]`,
 		group: groupData,
 		category: topicList,
