@@ -94,6 +94,7 @@ Controllers.reset = async function (req, res) {
 };
 
 Controllers.login = async function (req, res) {
+	console.log('Controllers.login');
 	const data = { loginFormEntry: [] };
 	const loginStrategies = require('../routes/authentication').getLoginStrategies();
 	const registrationType = meta.config.registrationType || 'normal';
@@ -141,8 +142,8 @@ Controllers.login = async function (req, res) {
 };
 
 Controllers.register = async function (req, res, next) {
+	console.log('Controllers.register');
 	const registrationType = meta.config.registrationType || 'normal';
-
 	if (registrationType === 'disabled') {
 		return setImmediate(next);
 	}
