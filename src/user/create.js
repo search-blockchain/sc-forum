@@ -13,6 +13,7 @@ const analytics = require('../analytics');
 
 module.exports = function (User) {
 	User.create = async function (data) {
+		console.log('----debug==> ', data);
 		data.username = data.username.trim();
 		data.userslug = slugify(data.username);
 		if (data.email !== undefined) {
@@ -41,8 +42,9 @@ module.exports = function (User) {
 	}
 
 	async function create(data) {
+		console.log('create ---->>>> ', data);
 		const timestamp = data.timestamp || Date.now();
-
+		const autoConfirm = Boolean(data.autoconfirm);
 		let userData = {
 			username: data.username,
 			userslug: data.userslug,
@@ -107,13 +109,12 @@ module.exports = function (User) {
 		if (userData.email && isFirstUser) {
 			await User.email.confirmByUid(userData.uid);
 		}
-
-		if (userData.email && userData.uid > 1) {
+		if (userData.email && userData.uid > 1 && !autoConfirm) {
 			await User.email.sendValidationEmail(userData.uid, {
 				email: userData.email,
 				template: 'welcome',
 				subject: `[[email:welcome-to, ${meta.config.title || meta.config.browserTitle || 'NodeBB'}]]`,
-			}).catch(err => winston.error(`[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
+			}).catch(err => winston.error(`------[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
 		}
 		if (userNameChanged) {
 			await User.notifications.sendNameChangeNotification(userData.uid, userData.username);

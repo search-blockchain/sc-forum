@@ -1,4 +1,8 @@
+/* eslint-disable no-tabs */
+
 'use strict';
+
+const winston = require('winston');
 
 define('messages', ['bootbox', 'translator', 'storage', 'alerts', 'hooks'], function (bootbox, translator, storage, alerts, hooks) {
 	const messages = {};
@@ -106,25 +110,27 @@ define('messages', ['bootbox', 'translator', 'storage', 'alerts', 'hooks'], func
 	}
 
 	messages.showInvalidSession = function () {
-		bootbox.alert({
-			title: '[[error:invalid-session]]',
-			message: '[[error:invalid-session-text]]',
-			closeButton: false,
-			callback: function () {
-				window.location.reload();
-			},
-		});
+		winston.warn('[[error:invalid-session-text]]');
+		// bootbox.alert({
+		// 	title: '[[error:invalid-session]]',
+		// 	message: '[[error:invalid-session-text]]',
+		// 	closeButton: false,
+		// 	callback: function () {
+		// 		window.location.reload();
+		// 	},
+		// });
 	};
 
 	messages.showSessionMismatch = function () {
-		bootbox.alert({
-			title: '[[error:session-mismatch]]',
-			message: '[[error:session-mismatch-text]]',
-			closeButton: false,
-			callback: function () {
-				window.location.reload();
-			},
-		});
+		winston.warn('[[error:session-mismatch-text]]');
+		// bootbox.alert({
+		// 	title: '[[error:session-mismatch]]',
+		// 	message: '[[error:session-mismatch-text]]',
+		// 	closeButton: false,
+		// 	callback: function () {
+		// 		window.location.reload();
+		// 	},
+		// });
 	};
 
 	return messages;

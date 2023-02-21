@@ -338,6 +338,7 @@ authenticationController.doLogin = async function (req, uid) {
 	if (!uid) {
 		return;
 	}
+	console.log('do login...：');
 	const loginAsync = util.promisify(req.login).bind(req);
 	await loginAsync({ uid: uid }, { keepSessionInfo: req.res.locals !== false });
 	await authenticationController.onSuccessfulLogin(req, uid);
@@ -353,6 +354,7 @@ authenticationController.onSuccessfulLogin = async function (req, uid) {
 		return true;
 	}
 
+	console.log('do onSuccessfulLogin...：');
 	try {
 		const uuid = utils.generateUUID();
 
@@ -393,7 +395,7 @@ authenticationController.onSuccessfulLogin = async function (req, uid) {
 
 		// Force session check for all connected socket.io clients with the same session id
 		sockets.in(`sess_${req.sessionID}`).emit('checkSession', uid);
-
+		console.log('成功授权');
 		plugins.hooks.fire('action:user.loggedIn', { uid: uid, req: req });
 	} catch (err) {
 		req.session.destroy();
@@ -450,6 +452,7 @@ const destroyAsync = util.promisify((req, callback) => req.session.destroy(callb
 const logoutAsync = util.promisify((req, callback) => req.logout(callback));
 
 authenticationController.logout = async function (req, res, next) {
+	console.log('--- logout');
 	if (!req.loggedIn || !req.sessionID) {
 		res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
 		return res.status(200).send('not-logged-in');
