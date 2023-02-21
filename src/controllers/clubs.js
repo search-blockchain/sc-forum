@@ -130,17 +130,17 @@ const getTempQuery = function({ cid, uid }) {
 }
 
 clubsController.details = async function (req, res, next) {
-	const slug = slugify(req.params.slug)
-	const lowercaseSlug = slug.toLowerCase();
-	if (req.params.slug !== lowercaseSlug) {
+	let slug = req.params.slug
+	const lowercaseSlug = slugify(slug).toLowerCase();
+	if (slug !== lowercaseSlug) {
 		if (res.locals.isAPI) {
-			req.params.slug = lowercaseSlug;
+			slug = lowercaseSlug;
 		} else {
 			return res.redirect(`${nconf.get('relative_path')}/clubs/${lowercaseSlug}`);
 		}
 	}
 	
-	const clubName = await clubs.getClubNameByClubSlug(slug);
+	const clubName = await clubs.getClubNameByClubSlug(lowercaseSlug);
 	if (!clubName) {
 		return next();
 	}
@@ -153,6 +153,7 @@ clubsController.details = async function (req, res, next) {
 	if (!exists) {
 		return next();
 	}
+
 	if (isHidden && !isAdmin && !isGlobalMod) {
 		const [isMember, isInvited] = await Promise.all([
 			clubs.isMember(req.uid, clubName),
@@ -177,8 +178,26 @@ clubsController.details = async function (req, res, next) {
 		userListCount: 20,
 	})
 	
-	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
+	if (!groupData) {
 		return next();
+	}
+	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
+	
+	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
+		console.warn('未关联Cid', req.uid)
+		res.render('clubs/topics', {
+			currentUID: req.uid,
+			title: `[[pages:clubs, ${groupData.displayName}]]`,
+			group: groupData,
+			category: [],
+			topics: [],
+			isAdmin: isAdmin,
+			isGlobalMod: isGlobalMod,
+			allowPrivateGroups: meta.config.allowPrivateGroups,
+			breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
+			// ...fullTopics[0]
+		});
+		return
 	}
 
 	// console.log('列表，群组数据！！', groupData)
@@ -225,7 +244,7 @@ clubsController.details = async function (req, res, next) {
 	let query = getTempQuery({ cid: groupData.memberPostCidsArray[0], uid: req.uid})
 	const topicList = await categories.getCategoryById(query)
 	// console.log('按CID查询topic', topicList)
-	console.log('查看回复？', topicList.length, topicList.topics[2])
+	// console.log('查看回复？', topicList.length, topicList.topics[2])
 	// const ttid = 7
 	// const topicData = await topics.getTopicData(ttid)
 	// console.log('数据比对——完整帖子', topicData)
@@ -288,14 +307,9 @@ clubsController.details = async function (req, res, next) {
 	
 	// console.log('完整topic数据', fullTopics)
 	
-	if (!groupData) {
-		return next();
-	}
-	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
-
 	// console.log('group数据', groupData)
-
 	res.render('clubs/topics', {
+		currentUID: req.uid,
 		title: `[[pages:clubs, ${groupData.displayName}]]`,
 		group: groupData,
 		category: topicList,
@@ -307,8 +321,63 @@ clubsController.details = async function (req, res, next) {
 		allowPrivateGroups: meta.config.allowPrivateGroups,
 		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
 		...fullTopics[0]
+	});
+};
+
+clubsController.groupDetails = async function (req, res, next) {
+	let slug = req.params.slug
+	const lowercaseSlug = slugify(slug).toLowerCase();
+	if (slug !== lowercaseSlug) {
+		if (res.locals.isAPI) {
+			slug = lowercaseSlug;
+		} else {
+			return res.redirect(`${nconf.get('relative_path')}/clubs/${lowercaseSlug}`);
+		}
 	}
-	);
+	const groupName = await groups.getGroupNameByGroupSlug(slug);
+	if (!groupName) {
+		return next();
+	}
+	const [exists, isHidden, isAdmin, isGlobalMod] = await Promise.all([
+		groups.exists(groupName),
+		groups.isHidden(groupName),
+		user.isAdministrator(req.uid),
+		user.isGlobalModerator(req.uid),
+	]);
+	if (!exists) {
+		return next();
+	}
+	if (isHidden && !isAdmin && !isGlobalMod) {
+		const [isMember, isInvited] = await Promise.all([
+			groups.isMember(req.uid, groupName),
+			groups.isInvited(req.uid, groupName),
+		]);
+		if (!isMember && !isInvited) {
+			return next();
+		}
+	}
+	const [groupData, posts] = await Promise.all([
+		groups.get(groupName, {
+			uid: req.uid,
+			truncateUserList: true,
+			userListCount: 20,
+		}),
+		groups.getLatestMemberPosts(groupName, 10, req.uid),
+	]);
+	if (!groupData) {
+		return next();
+	}
+	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
+
+	res.render('clubs/details', {
+		title: `[[pages:clubs, ${groupData.displayName}]]`,
+		group: groupData,
+		posts: posts,
+		isAdmin: isAdmin,
+		isGlobalMod: isGlobalMod,
+		allowPrivateGroups: meta.config.allowPrivateGroups,
+		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
+	});
 };
 
 clubsController.members = async function (req, res, next) {

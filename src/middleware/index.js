@@ -17,6 +17,8 @@ const analytics = require('../analytics');
 const privileges = require('../privileges');
 const cacheCreate = require('../cache/lru');
 const helpers = require('./helpers');
+const db = require('../database');
+const authenticationController = require('../controllers/authentication');
 
 const controllers = {
 	api: require('../controllers/api'),
@@ -75,11 +77,52 @@ middleware.stripLeadingSlashes = function stripLeadingSlashes(req, res, next) {
 };
 
 middleware.pageView = helpers.try(async (req, res, next) => {
+	console.log('view page ==> ');
+	console.log('middleware pageview ===>>>>> ', {
+		forumdata: req.cookies ? req.cookies.forumdata : '',
+	});
+
 	if (req.loggedIn) {
 		await Promise.all([
 			user.updateOnlineUsers(req.uid),
 			user.updateLastOnlineTime(req.uid),
 		]);
+	} else {
+		const forumCookieFromApp = req.cookies ? req.cookies.forumdata : '';
+		if (forumCookieFromApp) {
+			const de64 = Buffer.from(forumCookieFromApp, 'base64').toString();
+			const objFromApp = JSON.parse(de64 || '{}');
+			console.log('decode: ', objFromApp);
+			db.getObjectField('gplusid:uid', objFromApp.sub, async (err, uid) => {
+				console.log('getObjectField:', err, uid, objFromApp.email, objFromApp.name);
+				const handleSuccess = async (id) => {
+					console.log('debug2');
+					await user.setUserField(id, 'email', objFromApp.email);
+					await user.email.confirmByUid(uid);
+					await user.setUserField(id, 'gplusid', objFromApp.sub);
+					await db.setObjectField('gplusid:uid', objFromApp.sub, uid);
+					if (objFromApp.picture) {
+						await user.setUserField(id, 'uploadedpicture', objFromApp.picture);
+						await user.setUserField(id, 'picture', objFromApp.picture);
+					}
+					console.log('debug3');
+					await authenticationController.doLogin(req, uid);
+					console.log('debug4');
+				};
+				console.log('debug1');
+				if (!uid) {
+					await user.create({
+						username: objFromApp.username,
+						email: objFromApp.email,
+					}, (e, id) => {
+						console.log('user.create: ', e, id);
+						handleSuccess(id);
+					});
+				} else {
+					handleSuccess(uid);
+				}
+			});
+		}
 	}
 	next();
 	await analytics.pageView({ ip: req.ip, uid: req.uid });
@@ -232,6 +275,7 @@ middleware.addUploadHeaders = function addUploadHeaders(req, res, next) {
 };
 
 middleware.validateAuth = helpers.try(async (req, res, next) => {
+	console.log('== middleware.validateAuth ==: ', res.locals);
 	try {
 		await plugins.hooks.fire('static:auth.validate', {
 			user: res.locals.user,
