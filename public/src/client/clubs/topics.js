@@ -52,9 +52,9 @@ define("forum/clubs/details", [
 	Details.showDialogToBuy = function (_e) {
 		console.log("购买这个俱乐部");
 		const token = "";
-		const userId = "60020";
-		const clubName = $('#buyBtn').data('name')
-		// console.log('buy clubName', name)
+		const userId = $('#buyBtn').data('uid');
+		const clubName = $('#buyBtn').data('name');
+		// console.log('buy', userId, clubName)
 		$.ajax(
 			"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo",
 			{
