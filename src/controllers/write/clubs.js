@@ -15,6 +15,11 @@ Clubs.create = async (req, res) => {
 	helpers.formatApiResponse(200, res, clubObj);
 };
 
+Clubs.createByApi = async (req, res) => {
+	const clubObj = await api.clubs.createByApi(req, req.body);
+	helpers.formatApiResponse(200, res, clubObj);
+};
+
 Clubs.update = async (req, res) => {
 	const clubObj = await api.clubs.update(req, {
 		...req.body,

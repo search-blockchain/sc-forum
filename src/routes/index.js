@@ -110,7 +110,6 @@ _mounts.clubs = (app, name, middleware, controllers) => {
 	
 	// middlewares
 	setupPageRoute(app, `/${name}`, [], controllers.clubs.list);
-	// groupDetails
 	setupPageRoute(app, `/${name}/:slug`, [], controllers.clubs.details);
 	setupPageRoute(app, `/${name}/:cid/:slug`, [], controllers.clubs.details);
 	// setupPageRoute(app, `/${name}/:slug/members`, middlewares, controllers.clubs.members);

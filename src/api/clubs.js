@@ -21,7 +21,7 @@ clubsAPI.create = async function (caller, data) {
 		throw new Error('[[error:invalid-club-name]]');
 	}
 
-	const canCreate = await privileges.global.can('club:create', caller.uid);
+	const canCreate = await privileges.global.can('group:create', caller.uid);
 	if (!canCreate) {
 		throw new Error('[[error:no-privileges]]');
 	}
@@ -32,6 +32,14 @@ clubsAPI.create = async function (caller, data) {
 		clubName: data.name,
 	});
 
+	return clubData;
+};
+
+clubsAPI.createByApi = async function (caller, data) {
+	const clubData = await clubs.create(data);
+	logClubEvent(caller, 'club-create', {
+		clubName: data.name,
+	});
 	return clubData;
 };
 
