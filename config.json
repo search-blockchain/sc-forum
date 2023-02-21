@@ -1,13 +1,13 @@
 {
-    "url": "http://192.168.1.107/forum",
+    "url": "http://192.168.1.107:4567/forum",
     "secret": "dae867b8-6111-41cc-97ab-cb222b714e21",
     "database": "mongo",
     "mongo": {
-        "host": "43.206.87.34",
-        "port": "2052",
+        "host": "192.168.1.107",
+        "port": "27017",
         "username": "searchclub",
         "password": "weshare123654321",
         "database": "searchclub",
-        "uri": "mongodb://searchclub:weshare123654321@43.206.87.34:2052/searchclub"
+        "uri": "mongodb://searchclub:weshare123654321@192.168.1.107:27017/searchclub"
     }
 }
