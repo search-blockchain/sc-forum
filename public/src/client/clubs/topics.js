@@ -30,7 +30,7 @@ define("forum/clubs/details", [
 	let userWalletInfo = {}
 	const token = "";
 	const clubName = $("#buyBtn").data("name")
-	const salt = $('#buyBtn').data('uid')
+	const userId = '60088'//$('#buyBtn').data('uid')
 
 	Details.init = function () {
 		$("#buyBtn").on("click", Details.showDialogToBuy);
@@ -140,7 +140,7 @@ define("forum/clubs/details", [
 						"Content-Type": "application/json;charset=UTF-8",
 						Accept: "application/json",
 					},
-					data: JSON.stringify({ salt }),
+					data: JSON.stringify({ userId }),
 					beforeSend: function () {},
 					success: function (res) {
 						console.log("queryWalletInfo", res);
