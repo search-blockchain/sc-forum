@@ -25,18 +25,28 @@ define("forum/clubs/details", [
 	bootbox,
 	alerts
 ) {
-	const Details = {};
-	let groupName;
+	const Details = {}
+	let groupName
+	let userWalletInfo = {}
+	const token = "";
+	const clubName = $("#buyBtn").data("name")
+	const salt = $('#buyBtn').data('uid')
 
 	Details.init = function () {
 		$("#buyBtn").on("click", Details.showDialogToBuy);
 		$("#myModal").on("show.bs.modal", function () {
-			// wire up the OK button to dismiss the modal when shown
 			$("#myModal .modal-footer .btn").on("click", function (e) {
 				console.log("button pressed");
 				// $("#myModal").modal("hide");
 			});
 		});
+		Details.getUserWalletInfo()
+			.then((res) => {
+				userWalletInfo = res
+			})
+			.catch((err) => {
+			
+			});
 
 		// $("#myModal").on("hide.bs.modal", function () {
 		// 	// remove the event listeners when the dialog is dismissed
@@ -48,126 +58,129 @@ define("forum/clubs/details", [
 		// 	$("#myModal").remove();
 		// });
 	};
+	Details.getUserWalletInfo = function () {
+		// const clubName = $("#buyBtn").data("name");
+		return new Promise((resolve, reject) => {
+			$.ajax(
+				"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo",
+				{
+					method: "POST",
+					dataType: "json",
+					contentType: "application/json;charset=UTF-8",
+					headers: {
+						// authorization: `Bearer ${token}`,
+						"Content-Type": "application/json;charset=UTF-8",
+						Accept: "application/json",
+					},
+					data: JSON.stringify({ salt }),
+					beforeSend: function () {},
+					success: function (res) {
+						console.log("queryWalletInfo", res);
+						if (
+							res.data &&
+							+res.code === 200 &&
+							res.data.items &&
+							res.data.items.length !== 0
+						) {
+							resolve(res.data.items[0]);
+						} else {
+							alerts.error(res.message || "pay failed");
+							reject(res.message || "pay failed");
+						}
+					},
+					error: function (err) {
+						console.log("queryWalletInfo", err);
+						alerts.error("pay failed");
+						reject(err);
+					},
+				}
+			);
+		});
+	};
 
 	Details.showDialogToBuy = function (_e) {
-		console.log("购买这个俱乐部");
-		const token = "";
-		const userId = $('#buyBtn').data('uid');
-		const clubName = $('#buyBtn').data('name');
-		// console.log('buy', userId, clubName)
-		$.ajax(
-			"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo",
-			{
-				// dataType: "jsonp",
-				type: "POST",
-				headers: {
-					authorization: `Bearer ${token}`,
-				},
-				data: {
-					userId,
-				},
-				beforeSend: function () {},
-				success: function (res) {
-					console.log("queryWalletInfo", res);
-					if (
-						res.data &&
-						res.data.data &&
-						res.data.data.items &&
-						res.data.data.items.length !== 0
-					) {
-						if (Number(res.data.data.items[0].avaliableBalance) > 100) {
-							$(".modal-footer").empty();
-							$(".modal-footer").append(
-								'<button type="button" class="btn btn-primary" id="pay">Pay</button>'
-							);
-							$(".modal-footer").append(
-								'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
-							);
-							$(".content").empty();
-							$(".content").append(
-								'<div class="content-1">Own the club for <span class="sct">100</span> SCT</div>'
-							);
-						} else {
-							$(".modal-footer").empty();
-							$(".modal-footer").append(
-								'<button type="button" class="btn btn-primary" id="goToSearch">Go to Search</button>'
-							);
-							$(".modal-footer").append(
-								'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
-							);
-							$(".content").empty();
-							$(".content").append(
-								'<div class="content-1">Your <span class="sct">SCT</span> is not enough</div>'
-							);
-							$(".content").append(
-								'<div class="content-2">Get more <span class="sct">SCT</span> by searching</div>'
-							);
-						}
-						$("#myModal").modal({
-							backdrop: true,
-							keyboard: true,
-							show: true,
-						});
-					}
-				},
-				error: function (err) {
-					console.log("queryWalletInfo", err);
-					$(".modal-footer").empty();
-					$(".modal-footer").append(
-						'<button type="button" class="btn btn-primary" id="pay">Pay</button>'
-					);
-					$(".modal-footer").append(
-						'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
-					);
-					$(".content").empty();
-					$(".content").append(
-						'<div class="content-1">Own the club for <span class="sct">100</span> SCT</div>'
-					);
-
-					$("#pay").on("click", function () {
-						console.log("buy club with 100 sct");
-						$(".modal-footer").empty();
-						$(".modal-footer").append(
-							`<button type="button" class="btn btn-primary" id="pay">
-								<i class="fas fa-spin fa-spinner"></i>
-								Pay
-							</button>`
-						);
-						$(".modal-footer").append(
-							'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
-						);
-						$.ajax(
-							"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWallet/buyPointCard",
-							{
-								type: "POST",
-								headers: {
-									authorization: `Bearer ${token}`,
-								},
-								data: {
-									userId,
-									clubName,
-								},
-								success: function (res) {
-									console.log('buyPointCard', res)
-									$("#myModal").modal("hide");
-									alerts.success('buy successfully')
-								},
-								error: function (err) {
-									console.log('buyPointCard', err)
-									$("#myModal").modal("hide");
-									alerts.error('pay failed')
-								},
+		console.log("购买这个俱乐部", userWalletInfo, clubName, salt);
+		if (Number(userWalletInfo.avaliableBalance) < 100) {
+			$(".modal-footer").empty();
+			$(".modal-footer").append(
+				'<button type="button" class="btn btn-primary" id="pay">Pay</button>'
+			);
+			$(".modal-footer").append(
+				'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
+			);
+			$("#modalBodyContent").empty();
+			$("#modalBodyContent").append(
+				'<div class="content-1">Own the club for <span class="sct">100</span> SCT</div>'
+			);
+			$("#pay").on("click", function () {
+				console.log("buy club with 100 sct");
+				$(".modal-footer").empty();
+				$(".modal-footer").append(
+					`<button type="button" class="btn btn-primary" id="pay">
+						<i class="fas fa-spin fa-spinner"></i>
+						Pay
+					</button>`
+				);
+				$(".modal-footer").append(
+					'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
+				);
+				$.ajax(
+					"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWallet/buyPointCard",
+					{
+						method: "POST",
+						dataType: "json",
+						contentType: "application/json;charset=UTF-8",
+						headers: {
+							// authorization: `Bearer ${token}`,
+							"Content-Type": "application/json;charset=UTF-8",
+							Accept: "application/json",
+						},
+						data: JSON.stringify({
+							userId: userWalletInfo.userId,
+							clubName,
+						}),
+						success: function (res) {
+							console.log("buyPointCard", res);
+							$("#myModal").modal("hide");
+							if (res.data && +res.code === 200) {
+								alerts.success("buy successfully");
+							} else {
+								alerts.success(res.message || "pay failed");
 							}
-						);
-					});
-					$("#myModal").modal({
-						backdrop: true,
-						keyboard: true,
-						show: true,
-					});
-				},
-			}
-		);
+						},
+						error: function (err) {
+							console.log("buyPointCard", err);
+							$("#myModal").modal("hide");
+							alerts.error("pay failed");
+						},
+					}
+				);
+			});
+		} else {
+			$(".modal-footer").empty();
+			$(".modal-footer").append(
+				'<button type="button" class="btn btn-primary" id="goToSearch">Go to Search</button>'
+			);
+			$(".modal-footer").append(
+				'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
+			);
+			$("#modalBodyContent").empty();
+			$("#modalBodyContent").append(
+				'<div class="content-1">Your <span class="sct">SCT</span> is not enough</div>'
+			);
+			$("#modalBodyContent").append(
+				'<div class="content-2">Get more <span class="sct">SCT</span> by searching</div>'
+			);
+			$("#goToSearch").on("click", function () {
+				console.log("go to search");
+				window.location.href = "https://www.search.club/";
+			});
+		}
+		$("#myModal").modal({
+			backdrop: true,
+			keyboard: true,
+			show: true,
+		});
 	};
 
 	Details.prepareSettings = function () {
