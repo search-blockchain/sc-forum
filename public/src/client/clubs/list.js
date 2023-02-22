@@ -4,6 +4,7 @@ define('forum/clubs/list', [
 	'forum/infinitescroll', 'benchpress', 'api', 'bootbox', 'alerts',
 ], function (infinitescroll, Benchpress, api, bootbox, alerts) {
 	const Clubs = {};
+	const defaultSort = 'count';
 
 	Clubs.init = function () {
 		infinitescroll.init(Clubs.loadMoreClubs);
@@ -21,14 +22,14 @@ define('forum/clubs/list', [
 			});
 		});
 		const params = utils.params();
-		$('#search-sort').val(params.sort || 'alpha');
+		// $('#search-sort').val(params.sort || 'alpha');
 
 		// Club searching
 		$('#search-text').on('keyup', Clubs.search);
 		$('#search-button').on('click', Clubs.search);
-		$('#search-sort').on('change', function () {
-			ajaxify.go('clubs?sort=' + $('#search-sort').val());
-		});
+		// $('#search-sort').on('change', function () {
+		// 	ajaxify.go('clubs?sort=' + $('#search-sort').val());
+		// });
 	};
 
 	Clubs.loadMoreClubs = function (direction) {
@@ -37,7 +38,8 @@ define('forum/clubs/list', [
 		}
 
 		infinitescroll.loadMore('clubs.loadMore', {
-			sort: $('#search-sort').val(),
+			// sort: $('#search-sort').val(),
+			sort: defaultSort,
 			after: $('[component="clubs/container"]').attr('data-nextstart'),
 		}, function (data, done) {
 			if (data && data.groups.length) {
@@ -60,12 +62,13 @@ define('forum/clubs/list', [
 	Clubs.search = function () {
 		const groupsEl = $('#groups-list');
 		const queryEl = $('#search-text');
-		const sortEl = $('#search-sort');
+		// const sortEl = $('#search-sort');
 
 		socket.emit('groups.search', {
 			query: queryEl.val(),
 			options: {
-				sort: sortEl.val(),
+				// sort: sortEl.val(),
+				sort: defaultSort,
 				filterHidden: true,
 				showMembers: true,
 				hideEphemeralClubs: true,
