@@ -2,8 +2,6 @@
 
 'use strict';
 
-const winston = require('winston');
-
 define('messages', ['bootbox', 'translator', 'storage', 'alerts', 'hooks'], function (bootbox, translator, storage, alerts, hooks) {
 	const messages = {};
 
@@ -110,7 +108,7 @@ define('messages', ['bootbox', 'translator', 'storage', 'alerts', 'hooks'], func
 	}
 
 	messages.showInvalidSession = function () {
-		winston.warn('[[error:invalid-session-text]]');
+		console.warn('[[error:invalid-session-text]]');
 		// bootbox.alert({
 		// 	title: '[[error:invalid-session]]',
 		// 	message: '[[error:invalid-session-text]]',
@@ -122,7 +120,7 @@ define('messages', ['bootbox', 'translator', 'storage', 'alerts', 'hooks'], func
 	};
 
 	messages.showSessionMismatch = function () {
-		winston.warn('[[error:session-mismatch-text]]');
+		console.warn('[[error:session-mismatch-text]]');
 		// bootbox.alert({
 		// 	title: '[[error:session-mismatch]]',
 		// 	message: '[[error:session-mismatch-text]]',
