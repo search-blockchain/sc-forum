@@ -40,6 +40,8 @@ define("forum/clubs/details", [
 				// $("#myModal").modal("hide");
 			});
 		});
+		const detailsPage = components.get('clubs/container');
+		
 		Details.getUserWalletInfo()
 			.then((res) => {
 				userWalletInfo = res
@@ -57,6 +59,72 @@ define("forum/clubs/details", [
 		// 	// remove the actual elements from the DOM when fully hidden
 		// 	$("#myModal").remove();
 		// });
+		
+		detailsPage.on('click', '[data-action]', function () {
+			const btnEl = $(this);
+			const userRow = btnEl.parents('[data-uid]');
+			const ownerFlagEl = userRow.find('.member-name > i');
+			const isOwner = !ownerFlagEl.hasClass('invisible');
+			const uid = userRow.attr('data-uid');
+			const action = btnEl.attr('data-action');
+
+			switch (action) {
+				// case 'toggleOwnership':
+				// 	api[isOwner ? 'del' : 'put'](`/groups/${ajaxify.data.group.slug}/ownership/${uid}`, {}).then(() => {
+				// 		ownerFlagEl.toggleClass('invisible');
+				// 	}).catch(alerts.error);
+				// 	break;
+
+				// case 'kick':
+				// 	translator.translate('[[groups:details.kick_confirm]]', function (translated) {
+				// 		bootbox.confirm(translated, function (confirm) {
+				// 			if (!confirm) {
+				// 				return;
+				// 			}
+
+				// 			api.del(`/groups/${ajaxify.data.group.slug}/membership/${uid}`, undefined).then(() => userRow.slideUp().remove()).catch(alerts.error);
+				// 		});
+				// 	});
+				// 	break;
+
+				// case 'update':
+				// 	Details.update();
+				// 	break;
+
+				// case 'delete':
+				// 	Details.deleteGroup();
+				// 	break;
+
+				case 'join':
+					api.put('/groups/' + ajaxify.data.group.slug + '/membership/' + (uid || app.user.uid), undefined).then(() => ajaxify.refresh()).catch(alerts.error);
+					break;
+
+				case 'leave':
+					api.del('/groups/' + ajaxify.data.group.slug + '/membership/' + (uid || app.user.uid), undefined).then(() => ajaxify.refresh()).catch(alerts.error);
+					break;
+
+				// TODO (14/10/2020): rewrite these to use api module and merge with above 2 case blocks
+			// 	case 'accept': // intentional fall-throughs!
+			// 	case 'reject':
+			// 	case 'issueInvite':
+			// 	case 'rescindInvite':
+			// 	case 'acceptInvite':
+			// 	case 'rejectInvite':
+			// 	case 'acceptAll':
+			// 	case 'rejectAll':
+			// 		socket.emit('groups.' + action, {
+			// 			toUid: uid,
+			// 			groupName: groupName,
+			// 		}, function (err) {
+			// 			if (!err) {
+			// 				ajaxify.refresh();
+			// 			} else {
+			// 				alerts.error(err);
+			// 			}
+			// 		});
+			// 		break;
+			}
+		});
 	};
 	Details.getUserWalletInfo = function () {
 		// const clubName = $("#buyBtn").data("name");

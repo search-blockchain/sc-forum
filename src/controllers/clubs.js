@@ -14,11 +14,13 @@ const pagination = require('../pagination');
 const privileges = require('../privileges');
 const utils = require('../utils');
 const slugify = require('../slugify');
+const defaultClubsSort = 'count';
+const defaultCategoriesSort = 'newest_to_oldest';
 
 const clubsController = module.exports;
 
 clubsController.list = async function (req, res) {
-	const sort = req.query.sort || 'alpha';
+	const sort = req.query.sort || defaultClubsSort;
 
 	const [groupData, allowGroupCreation] = await Promise.all([
 		groups.getGroupsBySort(sort, 0, 50),
@@ -48,13 +50,13 @@ clubsController.list = async function (req, res) {
 	});
 };
 
-const getTempQuery = function({ cid, uid }) {
-	return {
+const getTempQuery = async function({ cid, uid, req }) {
+	let query = {
 		uid,
 		cid,
 		start: 0,
 		stop: 19,
-		sort: 'most_posts',
+		sort: req.params.sort || defaultCategoriesSort,
 		settings: {
 			acpLang: 'zh-CN',
 			bootswatchSkin: '',
@@ -127,6 +129,15 @@ const getTempQuery = function({ cid, uid }) {
 			'unread-class': ''
 		}
 	}
+	// const [categoryFields, userPrivileges, userSettings, rssToken] = await Promise.all([
+	// 	categories.getCategoryFields(cid, ['slug', 'disabled', 'link']),
+	// 	privileges.categories.get(cid, req.uid),
+	// 	user.getSettings(req.uid),
+	// 	user.auth.getFeedToken(req.uid),
+	// ]);
+	const userSettings = await user.getSettings(req.uid);
+	query.settings = userSettings
+	return query
 }
 
 clubsController.details = async function (req, res, next) {
@@ -182,6 +193,8 @@ clubsController.details = async function (req, res, next) {
 		return next();
 	}
 	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
+	const ownerUids = await clubs.getOwners(clubName);
+	groupData.hasOwner = ownerUids.length > 0;
 	
 	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
 		console.warn('未关联Cid', req.uid)
@@ -241,7 +254,7 @@ clubsController.details = async function (req, res, next) {
 
 
 	
-	let query = getTempQuery({ cid: groupData.memberPostCidsArray[0], uid: req.uid})
+	let query = await getTempQuery({ cid: groupData.memberPostCidsArray[0], uid: req.uid, req})
 	const topicList = await categories.getCategoryById(query)
 	// console.log('按CID查询topic', topicList)
 	// console.log('查看回复？', topicList.length, topicList.topics[2])
