@@ -1,3 +1,5 @@
+/* eslint-disable handle-callback-err */
+
 'use strict';
 
 const async = require('async');
@@ -40,6 +42,7 @@ middleware.regexes = {
 const csrfMiddleware = csrf();
 
 middleware.applyCSRF = function (req, res, next) {
+	console.log('middleware.applyCSRF=> ', req.uid);
 	if (req.uid >= 0) {
 		csrfMiddleware(req, res, next);
 	} else {
@@ -93,34 +96,35 @@ middleware.pageView = helpers.try(async (req, res, next) => {
 			const de64 = Buffer.from(forumCookieFromApp, 'base64').toString();
 			const objFromApp = JSON.parse(de64 || '{}');
 			console.log('decode: ', objFromApp);
+			const autoConfirm = true;
+
 			db.getObjectField('gplusid:uid', objFromApp.sub, async (err, uid) => {
 				console.log('getObjectField:', err, uid, objFromApp.email, objFromApp.name);
-				const handleSuccess = async (id) => {
-					console.log('debug2');
-					await user.setUserField(id, 'email', objFromApp.email);
+				const success = async (uid) => {
+					await user.setUserField(uid, 'email', objFromApp.email);
 					await user.email.confirmByUid(uid);
-					await user.setUserField(id, 'gplusid', objFromApp.sub);
-					await db.setObjectField('gplusid:uid', objFromApp.sub, uid);
+					db.setObjectField('gplusid:uid', objFromApp.sub);
 					if (objFromApp.picture) {
-						await user.setUserField(id, 'uploadedpicture', objFromApp.picture);
-						await user.setUserField(id, 'picture', objFromApp.picture);
+						await user.setUserField(uid, 'uploadedpicture', objFromApp.picture);
+						await user.setUserField(uid, 'picture', objFromApp.picture);
 					}
-					console.log('debug3');
+					console.log('登录======');
 					await authenticationController.doLogin(req, uid);
-					console.log('debug4');
 				};
-				console.log('debug1');
-				if (!uid) {
-					await user.create({
-						username: objFromApp.username,
-						email: objFromApp.email,
-					}, (e, id) => {
-						console.log('user.create: ', e, id);
-						handleSuccess(id);
-					});
-				} else {
-					handleSuccess(uid);
-				}
+				user.getUidByEmail(objFromApp.email, (err, uid) => {
+					if (!uid) {
+						user.create({
+							username: objFromApp.username || objFromApp.name,
+							email: autoConfirm && objFromApp.email,
+						}, (e, uid) => {
+							if (!e) {
+								success(uid);
+							}
+						});
+					} else {
+						success(uid);
+					}
+				});
 			});
 		}
 	}
