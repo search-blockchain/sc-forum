@@ -167,7 +167,7 @@ define("forum/clubs/details", [
 	};
 
 	Details.showDialogToBuy = function (_e) {
-		console.log("购买这个俱乐部", userWalletInfo, clubName, salt);
+		console.log("购买这个俱乐部", userWalletInfo, clubName, userId);
 		if (Number(userWalletInfo.avaliableBalance) > 100) {
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
