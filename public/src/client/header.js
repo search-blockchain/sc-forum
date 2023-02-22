@@ -1,7 +1,5 @@
 'use strict';
 
-const Cookies = require('js-cookie');
-
 define('forum/header', [
 	'forum/header/unread',
 	'forum/header/notifications',
@@ -71,8 +69,8 @@ define('forum/header', [
 	function handleLogout() {
 		$('#header-menu .container').on('click', '[component="user/logout"]', function () {
 			require(['logout'], function (logout) {
-				Cookies.remove('forumdata');
-				Cookies.remove('express.sid');
+				require('js-cookie').remove('forumdata');
+				require('js-cookie').remove('express.sid');
 				logout();
 			});
 			return false;

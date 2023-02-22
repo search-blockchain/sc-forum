@@ -107,6 +107,7 @@ module.exports = function (User) {
 	}
 
 	User.auth.addSession = async function (uid, sessionId) {
+		console.log('---> add session <---： ', uid, sessionId);
 		if (!(parseInt(uid, 10) > 0)) {
 			return;
 		}
