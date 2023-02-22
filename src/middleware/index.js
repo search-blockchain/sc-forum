@@ -44,7 +44,9 @@ const csrfMiddleware = csrf();
 middleware.applyCSRF = function (req, res, next) {
 	console.log('middleware.applyCSRF=> ', req.uid);
 	if (req.uid >= 0) {
-		csrfMiddleware(req, res, next);
+		// todo....
+		// csrfMiddleware(req, res, next);
+		next();
 	} else {
 		next();
 	}

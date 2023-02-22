@@ -463,7 +463,8 @@ authenticationController.logout = async function (req, res, next) {
 	try {
 		await user.auth.revokeSession(sessionID, uid);
 		await logoutAsync(req);
-
+		res.clearCookie('forumdata');
+		res.clearCookie('express.sid');
 		await destroyAsync(req);
 		res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
 

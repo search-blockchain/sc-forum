@@ -42,7 +42,10 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 	]);
 
 	if (!canLoginIfBanned && req.loggedIn) {
+		console.log('buildHeader debug');
 		req.logout(() => {
+			res.clearCookie('forumdata');
+			res.clearCookie('express.sid');
 			res.redirect('/');
 		});
 		return;

@@ -70,6 +70,8 @@ app.onDomReady();
 
 		$('[component="logout"]').on('click', function () {
 			require(['logout'], function (logout) {
+				require('js-cookie').remove('forumdata');
+				require('js-cookie').remove('express.sid');
 				logout();
 			});
 			return false;
