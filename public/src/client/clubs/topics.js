@@ -25,7 +25,7 @@ define("forum/clubs/details", [
 	categorySelector,
 	bootbox,
 	alerts,
-	utils,
+	utils
 ) {
 	const Details = {};
 	let groupName;
@@ -49,7 +49,7 @@ define("forum/clubs/details", [
 			.then((res) => {
 				userWalletInfo = res;
 			})
-			.catch((err) => {})
+			.catch((err) => {});
 
 		// $("#myModal").on("hide.bs.modal", function () {
 		// 	// remove the event listeners when the dialog is dismissed
@@ -146,12 +146,15 @@ define("forum/clubs/details", [
 		});
 	};
 	Details.getUserWalletInfo = function () {
-		const objFromApp = utils.getCookie('forumdata')
-		if(!objFromApp) return alerts.error('未登录')
-		userId = objFromApp.userId
-		token = objFromApp.token
 		return new Promise((resolve, reject) => {
-			console.log('cndjn')
+			console.log("cndjn");
+			const objFromApp = utils.getCookie("forumdata");
+			if (!objFromApp) {
+				alerts.error("未登录");
+				return reject("未登录");
+			}
+			userId = objFromApp.userId;
+			token = objFromApp.token;
 			$.ajax(
 				"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo",
 				{
@@ -167,14 +170,10 @@ define("forum/clubs/details", [
 					beforeSend: function () {},
 					success: function (res) {
 						console.log("queryWalletInfo", res);
-						if (
-							res.data &&
-							+res.code === 200 &&
-							res.data.items
-						) {
-							if( res.data.items.length !== 0){
+						if (res.data && +res.code === 200 && res.data.items) {
+							if (res.data.items.length !== 0) {
 								resolve(res.data.items[0]);
-							}else {
+							} else {
 								alerts.error("get avaliable balance failed");
 								reject("get avaliable balance failed");
 							}
@@ -195,8 +194,8 @@ define("forum/clubs/details", [
 
 	Details.showDialogToBuy = function (_e) {
 		console.log("购买这个俱乐部", userWalletInfo, clubName, userId);
-		if(!userId && !token) return alerts.error('未登录')
-		if(!userWalletInfo.avaliableBalance) return alerts.error('余额为0')
+		if (!userId && !token) return alerts.error("未登录");
+		if (!userWalletInfo.avaliableBalance) return alerts.error("余额为0");
 		if (Number(userWalletInfo.avaliableBalance) > 100) {
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
