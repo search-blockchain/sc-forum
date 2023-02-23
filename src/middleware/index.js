@@ -21,6 +21,8 @@ const cacheCreate = require('../cache/lru');
 const helpers = require('./helpers');
 const db = require('../database');
 const authenticationController = require('../controllers/authentication');
+const User = user;
+const autoConfirm = true; // Google.settings.autoconfirm;
 
 const controllers = {
 	api: require('../controllers/api'),
@@ -42,15 +44,13 @@ middleware.regexes = {
 const csrfMiddleware = csrf();
 
 middleware.applyCSRF = function (req, res, next) {
-	console.log('middleware.applyCSRF=> ', req.uid);
 	if (req.uid >= 0) {
-		// todo....
-		// csrfMiddleware(req, res, next);
-		next();
+		csrfMiddleware(req, res, next);
 	} else {
 		next();
 	}
 };
+
 middleware.applyCSRFasync = util.promisify(middleware.applyCSRF);
 
 middleware.ensureLoggedIn = (req, res, next) => {
@@ -82,57 +82,126 @@ middleware.stripLeadingSlashes = function stripLeadingSlashes(req, res, next) {
 };
 
 middleware.pageView = helpers.try(async (req, res, next) => {
-	console.log('view page ==> ');
-	console.log('middleware pageview ===>>>>> ', {
-		forumdata: req.cookies ? req.cookies.forumdata : '',
-	});
-
 	if (req.loggedIn) {
 		await Promise.all([
 			user.updateOnlineUsers(req.uid),
 			user.updateLastOnlineTime(req.uid),
 		]);
-	} else {
-		const forumCookieFromApp = req.cookies ? req.cookies.forumdata : '';
-		if (forumCookieFromApp) {
-			const de64 = Buffer.from(forumCookieFromApp, 'base64').toString();
-			const objFromApp = JSON.parse(de64 || '{}');
-			console.log('decode: ', objFromApp);
-			const autoConfirm = true;
-
-			db.getObjectField('gplusid:uid', objFromApp.sub, async (err, uid) => {
-				console.log('getObjectField:', err, uid, objFromApp.email, objFromApp.name);
-				const success = async (uid) => {
-					await user.setUserField(uid, 'email', objFromApp.email);
-					await user.email.confirmByUid(uid);
-					db.setObjectField('gplusid:uid', objFromApp.sub);
-					if (objFromApp.picture) {
-						await user.setUserField(uid, 'uploadedpicture', objFromApp.picture);
-						await user.setUserField(uid, 'picture', objFromApp.picture);
-					}
-					console.log('登录======');
-					await authenticationController.doLogin(req, uid);
-				};
-				user.getUidByEmail(objFromApp.email, (err, uid) => {
-					if (!uid) {
-						user.create({
-							username: objFromApp.username || objFromApp.name,
-							email: autoConfirm && objFromApp.email,
-						}, (e, uid) => {
-							if (!e) {
-								success(uid);
-							}
-						});
-					} else {
-						success(uid);
-					}
-				});
-			});
-		}
 	}
 	next();
 	await analytics.pageView({ ip: req.ip, uid: req.uid });
 	plugins.hooks.fire('action:middleware.pageView', { req: req });
+});
+
+
+const Google = {}
+Google.getUidByGoogleId = function (gplusid, callback) {
+	db.getObjectField('gplusid:uid', gplusid, (err, uid) => {
+		if (err) {
+			return callback(err);
+		}
+		callback(null, uid);
+	});
+};
+
+Google.login = function (gplusid, handle, email, picture, callback) {
+
+	Google.getUidByGoogleId(gplusid, (err, uid) => {
+		if (err) {
+			return callback(err);
+		}
+
+		if (uid !== null) {
+			// Existing User
+			callback(null, {
+				uid: uid,
+			});
+		} else {
+			// New User
+			const success = async (uid) => {
+				if (autoConfirm) {
+					await User.setUserField(uid, 'email', email);
+					await User.email.confirmByUid(uid);
+				}
+				// Save google-specific information to the user
+				User.setUserField(uid, 'gplusid', gplusid);
+				db.setObjectField('gplusid:uid', gplusid, uid);
+
+				// Save their photo, if present
+				if (picture) {
+					User.setUserField(uid, 'uploadedpicture', picture);
+					User.setUserField(uid, 'picture', picture);
+				}
+
+				callback(null, {
+					uid: uid,
+				});
+			};
+
+			User.getUidByEmail(email, (err, uid) => {
+				if (err) {
+					return callback(err);
+				}
+
+				if (!uid) {
+					// Abort user creation if registration via SSO is restricted
+					// if (Google.settings.disableRegistration) {
+					// 	return callback(new Error('[[error:sso-registration-disabled, Google]]'));
+					// }
+
+					User.create({ username: handle, email: !autoConfirm ? email : undefined }, (err, uid) => {
+						console.log('login - googleAuth login -> ', err, uid);
+						if (err) {
+							return callback(err);
+						}
+
+						success(uid);
+					});
+				} else {
+					success(uid); // Existing account -- merge
+				}
+			});
+		}
+	});
+};
+
+middleware.googleAuth = helpers.try(async (req, res, next) => {
+	console.log('login - googleAuth req.loggedIn -> ', req.loggedIn)
+	if(req.loggedIn) {
+		return next();
+	}
+	if (req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && req.user.uid > 0) {
+		// TODO no use
+		console.log('login - googleAuth update userdata', req.user)
+		// Save Google-specific information to the user
+		User.setUserField(req.user.uid, 'gplusid', profile.id);
+		db.setObjectField('gplusid:uid', profile.id, req.user.uid);
+		return next();
+	}
+
+	const forumCookieFromApp = req.cookies ? req.cookies.forumdata : '';
+
+	if (!forumCookieFromApp) {
+		console.log('login - googleAuth no forumdata');
+		return next();
+	}
+	const de64 = Buffer.from(forumCookieFromApp, 'base64').toString();
+	const objFromApp = JSON.parse(de64 || '{}');
+	console.log('login - googleAuth forumdata decode: ', objFromApp);
+	const displayName = (objFromApp.username || objFromApp.name);
+	await new Promise((resolve, reject) => {
+		Google.login(objFromApp.sub, displayName, objFromApp.email, objFromApp.picture, (err, user) => {
+			if (err) {
+				return reject({err, user})
+			}
+	
+			authenticationController.onSuccessfulLogin(req, user.uid, (err) => {
+				// TODO remove forumdata
+				return resolve({err, user})
+			});
+		});
+	})
+	next();
 });
 
 middleware.pluginHooks = helpers.try(async (req, res, next) => {
@@ -281,7 +350,6 @@ middleware.addUploadHeaders = function addUploadHeaders(req, res, next) {
 };
 
 middleware.validateAuth = helpers.try(async (req, res, next) => {
-	console.log('== middleware.validateAuth ==: ', res.locals);
 	try {
 		await plugins.hooks.fire('static:auth.validate', {
 			user: res.locals.user,

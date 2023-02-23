@@ -238,7 +238,7 @@ authenticationController.login = async (req, res, next) => {
 		winston.error(`[auth/override] Requested login strategy "${strategy}" not found, reverting back to local login strategy.`);
 		strategy = 'local';
 	}
-
+	
 	if (plugins.hooks.hasListeners('action:auth.overrideLogin')) {
 		return continueLogin(strategy, req, res, next);
 	}
@@ -338,7 +338,6 @@ authenticationController.doLogin = async function (req, uid) {
 	if (!uid) {
 		return;
 	}
-	console.log('do login...：');
 	const loginAsync = util.promisify(req.login).bind(req);
 	await loginAsync({ uid: uid }, { keepSessionInfo: req.res.locals !== false });
 	await authenticationController.onSuccessfulLogin(req, uid);
@@ -350,16 +349,18 @@ authenticationController.onSuccessfulLogin = async function (req, uid) {
 	 * That behaviour is no longer required, onSuccessfulLogin is now automatically
 	 * called in NodeBB core. However, if already called, return prematurely
 	 */
+	console.log('login - onSuccessfulLogin - status -> ', req.loggedIn, req.session.forceLogin)
 	if (req.loggedIn && !req.session.forceLogin) {
 		return true;
 	}
+	console.log('login - onSuccessfulLogin - req.session -> ', req.session)
 
-	console.log('do onSuccessfulLogin...：');
 	try {
 		const uuid = utils.generateUUID();
 
 		req.uid = uid;
 		req.loggedIn = true;
+		console.log('login - onSuccessfulLoginlogin - onSuccessfulLogin ', uid, uuid);
 		await meta.blacklist.test(req.ip);
 		await user.logIP(uid, req.ip);
 		await user.bans.unbanIfExpired([uid]);
@@ -370,6 +371,10 @@ authenticationController.onSuccessfulLogin = async function (req, uid) {
 		delete req.session.forceLogin;
 		// Associate IP used during login with user account
 		req.session.meta.ip = req.ip;
+
+		req.session.passport = {
+			user: uid
+		}
 
 		// Associate metadata retrieved via user-agent
 		req.session.meta = _.extend(req.session.meta, {
@@ -395,7 +400,7 @@ authenticationController.onSuccessfulLogin = async function (req, uid) {
 
 		// Force session check for all connected socket.io clients with the same session id
 		sockets.in(`sess_${req.sessionID}`).emit('checkSession', uid);
-		console.log('成功授权');
+		console.log('login - onSuccessfulLogin - auth success -> ', `sess_${req.sessionID}`);
 		plugins.hooks.fire('action:user.loggedIn', { uid: uid, req: req });
 	} catch (err) {
 		req.session.destroy();
@@ -452,7 +457,6 @@ const destroyAsync = util.promisify((req, callback) => req.session.destroy(callb
 const logoutAsync = util.promisify((req, callback) => req.logout(callback));
 
 authenticationController.logout = async function (req, res, next) {
-	console.log('--- logout');
 	if (!req.loggedIn || !req.sessionID) {
 		res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
 		return res.status(200).send('not-logged-in');

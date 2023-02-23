@@ -21,7 +21,8 @@ helpers.setupPageRoute = function (...args) {
 		middleware.registrationComplete,
 		middleware.pluginHooks,
 		...middlewares,
-		middleware.pageView,
+		middleware.googleAuth,
+		middleware.pageView
 	];
 
 	router.get(

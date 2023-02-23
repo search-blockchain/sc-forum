@@ -106,7 +106,7 @@ _mounts.clubs = (app, name, middleware, controllers) => {
 
 	// controllers.categories.list
 	// middlewares
-	setupPageRoute(app, '/clubs', [], controllers.clubs.list);
+	setupPageRoute(app, '/clubs', [middleware.applyCSRF], controllers.clubs.list);
 	
 	// middlewares
 	setupPageRoute(app, `/${name}`, [], controllers.clubs.list);
