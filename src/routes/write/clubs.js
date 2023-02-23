@@ -12,7 +12,7 @@ module.exports = function () {
 	const middlewares = [middleware.ensureLoggedIn];
 
 	// setupApiRoute(router, 'post', '/', [...middlewares, middleware.checkRequired.bind(null, ['name'])], controllers.write.clubs.create);
-	setupApiRoute(router, 'post', '/', [middleware.checkRequired.bind(null, ['name']), apiMiddleware.requireUser, apiMiddleware.requireAdmin], controllers.write.clubs.createByApi);
+	setupApiRoute(router, 'post', '/custom', [middleware.checkRequired.bind(null, ['name']), apiMiddleware.requireUser, apiMiddleware.requireAdmin], controllers.write.clubs.createByApi);
 	setupApiRoute(router, 'head', '/:slug', [middleware.assert.club], controllers.write.clubs.exists);
 	setupApiRoute(router, 'put', '/:slug', [...middlewares, middleware.assert.club], controllers.write.clubs.update);
 	setupApiRoute(router, 'delete', '/:slug', [...middlewares, middleware.assert.club], controllers.write.clubs.delete);
