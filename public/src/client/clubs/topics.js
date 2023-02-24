@@ -12,6 +12,7 @@ define("forum/clubs/details", [
 	"categorySelector",
 	"bootbox",
 	"alerts",
+	"utils",
 ], function (
 	memberList,
 	iconSelect,
@@ -23,14 +24,16 @@ define("forum/clubs/details", [
 	slugify,
 	categorySelector,
 	bootbox,
-	alerts
+	alerts,
+	utils
 ) {
-	const Details = {}
-	let groupName
-	let userWalletInfo = {}
-	const token = "";
-	const clubName = $("#buyBtn").data("name")
-	const userId = '60088'//$('#buyBtn').data('uid')
+	const Details = {};
+	let groupName;
+	let userWalletInfo = {};
+
+	let token = "";
+	let clubName = $("#buyBtn").data("name");
+	let userId = "";
 
 	Details.init = function () {
 		$("#buyBtn").on("click", Details.showDialogToBuy);
@@ -40,15 +43,13 @@ define("forum/clubs/details", [
 				// $("#myModal").modal("hide");
 			});
 		});
-		const detailsPage = components.get('clubs/container');
-		
+		const detailsPage = components.get("clubs/container");
+
 		Details.getUserWalletInfo()
 			.then((res) => {
-				userWalletInfo = res
+				userWalletInfo = res;
 			})
-			.catch((err) => {
-			
-			});
+			.catch((err) => {});
 
 		// $("#myModal").on("hide.bs.modal", function () {
 		// 	// remove the event listeners when the dialog is dismissed
@@ -59,14 +60,14 @@ define("forum/clubs/details", [
 		// 	// remove the actual elements from the DOM when fully hidden
 		// 	$("#myModal").remove();
 		// });
-		
-		detailsPage.on('click', '[data-action]', function () {
+
+		detailsPage.on("click", "[data-action]", function () {
 			const btnEl = $(this);
-			const userRow = btnEl.parents('[data-uid]');
-			const ownerFlagEl = userRow.find('.member-name > i');
-			const isOwner = !ownerFlagEl.hasClass('invisible');
-			const uid = userRow.attr('data-uid');
-			const action = btnEl.attr('data-action');
+			const userRow = btnEl.parents("[data-uid]");
+			const ownerFlagEl = userRow.find(".member-name > i");
+			const isOwner = !ownerFlagEl.hasClass("invisible");
+			const uid = userRow.attr("data-uid");
+			const action = btnEl.attr("data-action");
 
 			switch (action) {
 				// case 'toggleOwnership':
@@ -95,40 +96,65 @@ define("forum/clubs/details", [
 				// 	Details.deleteGroup();
 				// 	break;
 
-				case 'join':
-					api.put('/groups/' + ajaxify.data.group.slug + '/membership/' + (uid || app.user.uid), undefined).then(() => ajaxify.refresh()).catch(alerts.error);
+				case "join":
+					api
+						.put(
+							"/groups/" +
+								ajaxify.data.group.slug +
+								"/membership/" +
+								(uid || app.user.uid),
+							undefined
+						)
+						.then(() => ajaxify.refresh())
+						.catch(alerts.error);
 					break;
 
-				case 'leave':
-					api.del('/groups/' + ajaxify.data.group.slug + '/membership/' + (uid || app.user.uid), undefined).then(() => ajaxify.refresh()).catch(alerts.error);
+				case "leave":
+					api
+						.del(
+							"/groups/" +
+								ajaxify.data.group.slug +
+								"/membership/" +
+								(uid || app.user.uid),
+							undefined
+						)
+						.then(() => ajaxify.refresh())
+						.catch(alerts.error);
 					break;
 
 				// TODO (14/10/2020): rewrite these to use api module and merge with above 2 case blocks
-			// 	case 'accept': // intentional fall-throughs!
-			// 	case 'reject':
-			// 	case 'issueInvite':
-			// 	case 'rescindInvite':
-			// 	case 'acceptInvite':
-			// 	case 'rejectInvite':
-			// 	case 'acceptAll':
-			// 	case 'rejectAll':
-			// 		socket.emit('groups.' + action, {
-			// 			toUid: uid,
-			// 			groupName: groupName,
-			// 		}, function (err) {
-			// 			if (!err) {
-			// 				ajaxify.refresh();
-			// 			} else {
-			// 				alerts.error(err);
-			// 			}
-			// 		});
-			// 		break;
+				// 	case 'accept': // intentional fall-throughs!
+				// 	case 'reject':
+				// 	case 'issueInvite':
+				// 	case 'rescindInvite':
+				// 	case 'acceptInvite':
+				// 	case 'rejectInvite':
+				// 	case 'acceptAll':
+				// 	case 'rejectAll':
+				// 		socket.emit('groups.' + action, {
+				// 			toUid: uid,
+				// 			groupName: groupName,
+				// 		}, function (err) {
+				// 			if (!err) {
+				// 				ajaxify.refresh();
+				// 			} else {
+				// 				alerts.error(err);
+				// 			}
+				// 		});
+				// 		break;
 			}
 		});
 	};
 	Details.getUserWalletInfo = function () {
-		// const clubName = $("#buyBtn").data("name");
 		return new Promise((resolve, reject) => {
+			console.log("cndjn");
+			const objFromApp = utils.getCookie("forumdata");
+			if (!objFromApp) {
+				alerts.error("未登录");
+				return reject("未登录");
+			}
+			userId = objFromApp.userId;
+			token = objFromApp.token;
 			$.ajax(
 				"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo",
 				{
@@ -136,7 +162,7 @@ define("forum/clubs/details", [
 					dataType: "json",
 					contentType: "application/json;charset=UTF-8",
 					headers: {
-						// authorization: `Bearer ${token}`,
+						authorization: `Bearer ${token}`,
 						"Content-Type": "application/json;charset=UTF-8",
 						Accept: "application/json",
 					},
@@ -144,21 +170,21 @@ define("forum/clubs/details", [
 					beforeSend: function () {},
 					success: function (res) {
 						console.log("queryWalletInfo", res);
-						if (
-							res.data &&
-							+res.code === 200 &&
-							res.data.items &&
-							res.data.items.length !== 0
-						) {
-							resolve(res.data.items[0]);
+						if (res.data && +res.code === 200 && res.data.items) {
+							if (res.data.items.length !== 0) {
+								resolve(res.data.items[0]);
+							} else {
+								alerts.error("get avaliable balance failed");
+								reject("get avaliable balance failed");
+							}
 						} else {
-							alerts.error(res.message || "pay failed");
-							reject(res.message || "pay failed");
+							alerts.error(res.message || "get avaliable balance failed");
+							reject(res.message || "get avaliable balance failed");
 						}
 					},
 					error: function (err) {
 						console.log("queryWalletInfo", err);
-						alerts.error("pay failed");
+						alerts.error("get avaliable balance failed");
 						reject(err);
 					},
 				}
@@ -167,7 +193,9 @@ define("forum/clubs/details", [
 	};
 
 	Details.showDialogToBuy = function (_e) {
-		console.log("购买这个俱乐部", userWalletInfo, clubName, salt);
+		console.log("购买这个俱乐部", userWalletInfo, clubName, userId);
+		if (!userId && !token) return alerts.error("未登录");
+		if (!userWalletInfo.avaliableBalance) return alerts.error("余额为0");
 		if (Number(userWalletInfo.avaliableBalance) > 100) {
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
@@ -199,7 +227,7 @@ define("forum/clubs/details", [
 						dataType: "json",
 						contentType: "application/json;charset=UTF-8",
 						headers: {
-							// authorization: `Bearer ${token}`,
+							authorization: `Bearer ${token}`,
 							"Content-Type": "application/json;charset=UTF-8",
 							Accept: "application/json",
 						},

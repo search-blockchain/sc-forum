@@ -109,26 +109,26 @@ define('messages', ['bootbox', 'translator', 'storage', 'alerts', 'hooks'], func
 
 	messages.showInvalidSession = function () {
 		console.warn('[[error:invalid-session-text]]');
-		// bootbox.alert({
-		// 	title: '[[error:invalid-session]]',
-		// 	message: '[[error:invalid-session-text]]',
-		// 	closeButton: false,
-		// 	callback: function () {
-		// 		window.location.reload();
-		// 	},
-		// });
+		bootbox.alert({
+			title: '[[error:invalid-session]]',
+			message: '[[error:invalid-session-text]]',
+			closeButton: false,
+			callback: function () {
+				window.location.reload();
+			},
+		});
 	};
 
 	messages.showSessionMismatch = function () {
 		console.warn('[[error:session-mismatch-text]]');
-		// bootbox.alert({
-		// 	title: '[[error:session-mismatch]]',
-		// 	message: '[[error:session-mismatch-text]]',
-		// 	closeButton: false,
-		// 	callback: function () {
-		// 		window.location.reload();
-		// 	},
-		// });
+		bootbox.alert({
+			title: '[[error:session-mismatch]]',
+			message: '[[error:session-mismatch-text]]',
+			closeButton: false,
+			callback: function () {
+				window.location.reload();
+			},
+		});
 	};
 
 	return messages;
