@@ -7006,18 +7006,6 @@
     "validator" "^13.0.0"
     "xregexp" "^5.1.0"
 
-"nodebb-plugin-session-sharing@^7.1.0":
-  "integrity" "sha512-MllSA0W5AYbK5Q6jDDdO7iB6EIBZ8vuPRosDTybGPo++geaENsCH05lK77pM9oFLNIQKu9dWcSAwqXyZX618fQ=="
-  "resolved" "https://registry.npmjs.org/nodebb-plugin-session-sharing/-/nodebb-plugin-session-sharing-7.1.0.tgz"
-  "version" "7.1.0"
-  dependencies:
-    "@commitlint/cli" "^9.1.2"
-    "async" "^3"
-    "eslint" "^7.7.0"
-    "jsonwebtoken" "^8.5.1"
-    "lint-staged" "^10.0.9"
-    "lodash" "^4.17.14"
-
 "nodebb-plugin-spam-be-gone@1.0.2":
   "integrity" "sha512-SWx6TG4XBIUR0epREvUClRjncjUkcPHay00E7tFujPjRM/SR788ychfwvkSedL7Yqy+PU1HyPm1lW88uqBcz9g=="
   "resolved" "https://registry.npmjs.org/nodebb-plugin-spam-be-gone/-/nodebb-plugin-spam-be-gone-1.0.2.tgz"
@@ -7064,7 +7052,7 @@
 
 "nodebb-theme-scwe@file:../sc-forum-theme":
   "resolved" "file:../sc-forum-theme"
-  "version" "1.0.0"
+  "version" "1.0.16"
   dependencies:
     "nodebb-theme-persona" "^12.1.15"
 

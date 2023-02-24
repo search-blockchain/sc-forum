@@ -377,6 +377,5 @@ define('forum/topic/threadTools', [
 		components.get('topic/ignoring/check').toggleClass('fa-check', state === 'ignore');
 	}
 
-
 	return ThreadTools;
 });
