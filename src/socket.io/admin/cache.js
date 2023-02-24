@@ -10,6 +10,7 @@ SocketCache.clear = async function (socket, data) {
 		post: require('../../posts/cache'),
 		object: db.objectCache,
 		group: require('../../groups').cache,
+		club: require('../../clubs').cache,
 		local: require('../../cache'),
 	};
 	caches = await plugins.hooks.fire('filter:admin.cache.get', caches);
@@ -24,6 +25,7 @@ SocketCache.toggle = async function (socket, data) {
 		post: require('../../posts/cache'),
 		object: db.objectCache,
 		group: require('../../groups').cache,
+		club: require('../../clubs').cache,
 		local: require('../../cache'),
 	};
 	caches = await plugins.hooks.fire('filter:admin.cache.get', caches);
