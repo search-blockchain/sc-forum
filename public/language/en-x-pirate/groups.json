@@ -52,7 +52,7 @@
     "membership.accept-invitation": "Accept Invitation",
     "membership.accept.notification_title": "You are now a member of <strong>%1</strong>",
     "membership.invitation-pending": "Invitation Pending",
-    "membership.join-group": "Join Group",
+    "membership.join-group": "Join",
     "membership.leave-group": "Leave Group",
     "membership.leave.notification_title": "<strong>%1</strong> has left group <strong>%2</strong>",
     "membership.reject": "Reject",

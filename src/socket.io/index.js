@@ -172,7 +172,7 @@ async function onMessage(socket, payload) {
 
 function requireModules() {
 	const modules = [
-		'admin', 'categories', 'groups', 'meta', 'modules',
+		'admin', 'categories', 'groups', 'clubs', 'meta', 'modules',
 		'notifications', 'plugins', 'posts', 'topics', 'user',
 		'blacklist', 'uploads',
 	];
@@ -238,7 +238,7 @@ async function authorize(socket, callback) {
 		sessionId: request.signedCookies ? request.signedCookies[nconf.get('sessionKey')] : null,
 		request: request,
 	});
-
+	
 	const sessionData = await getSessionAsync(sessionId);
 
 	if (sessionData && sessionData.passport && sessionData.passport.user) {

@@ -1,3 +1,7 @@
+/* eslint-disable quotes */
+/* eslint-disable max-len */
+/* eslint-disable no-tabs */
+
 "use strict";
 
 define("forum/clubs/details", [

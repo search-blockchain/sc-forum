@@ -95,7 +95,7 @@ module.exports = function (Categories) {
 		const { cid } = data;
 		let set = `cid:${cid}:tids`;
 		const sort = data.sort || (data.settings && data.settings.categoryTopicSort) || meta.config.categoryTopicSort || 'newest_to_oldest';
-
+		console.log('-- buildTopicsSortedSet --: ', sort);
 		if (sort === 'most_posts') {
 			set = `cid:${cid}:tids:posts`;
 		} else if (sort === 'most_votes') {
@@ -124,6 +124,7 @@ module.exports = function (Categories) {
 	};
 
 	Categories.getSortedSetRangeDirection = async function (sort) {
+		console.log('getSortedSetRangeDirection----->>> ', sort);
 		sort = sort || 'newest_to_oldest';
 		const direction = ['newest_to_oldest', 'most_posts', 'most_votes', 'most_views'].includes(sort) ? 'highest-to-lowest' : 'lowest-to-highest';
 		const result = await plugins.hooks.fire('filter:categories.getSortedSetRangeDirection', {

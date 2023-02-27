@@ -4,6 +4,7 @@
 const nconf = require('nconf');
 const validator = require('validator');
 const qs = require('querystring');
+const winston = require('winston');
 
 const db = require('../database');
 const privileges = require('../privileges');
@@ -20,6 +21,8 @@ const categoryController = module.exports;
 
 const url = nconf.get('url');
 const relative_path = nconf.get('relative_path');
+
+
 
 categoryController.get = async function (req, res, next) {
 	const cid = req.params.category_id;
@@ -138,7 +141,7 @@ categoryController.get = async function (req, res, next) {
 	});
 
 	analytics.increment([`pageviews:byCid:${categoryData.cid}`]);
-
+	winston.warn('render category topic');
 	res.render('category', categoryData);
 };
 
