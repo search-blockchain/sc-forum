@@ -193,6 +193,8 @@ clubsController.details = async function (req, res, next) {
 		return next();
 	}
 	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
+	const ownerUids = await clubs.getOwners(clubName);
+	groupData.hasOwner = ownerUids.length > 0;
 	// const ownerUids = await clubs.getOwners(clubName);
 	// groupData.ownerUids = ownerUids;
 	groupData.showTopicTools = groupData.isOwner;
