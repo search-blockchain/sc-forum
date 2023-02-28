@@ -1,7 +1,7 @@
 'use strict';
 
 
-define('forum/topic/threadTools', [
+define('forum/clubs/threadTools', [
 	'components',
 	'translator',
 	'handleBack',
@@ -173,9 +173,9 @@ define('forum/topic/threadTools', [
 	};
 
 	function renderMenu(container) {
-		console.log('render menu topic');
+		console.log('render menu clubs');
 		container.on('show.bs.dropdown', '.thread-tools', function () {
-			console.log('render menu topic: thread-tools');
+			console.log('render menu clubs: thread-tools');
 			const $this = $(this);
 			const dropdownMenu = $this.find('.dropdown-menu');
 			if (dropdownMenu.html()) {
@@ -187,7 +187,8 @@ define('forum/topic/threadTools', [
 				if (err) {
 					return alerts.error(err);
 				}
-				app.parseAndTranslate('partials/topic/topic-menu-list', data, function (html) {
+        console.log('trigger ----- ');
+				app.parseAndTranslate('partials/clubs/topic-menu-list', data, function (html) {
 					dropdownMenu.html(html);
 					dropdownMenu.toggleClass('hidden', false);
 

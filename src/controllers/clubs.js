@@ -198,6 +198,7 @@ clubsController.details = async function (req, res, next) {
 	// const ownerUids = await clubs.getOwners(clubName);
 	// groupData.ownerUids = ownerUids;
 	groupData.showTopicTools = groupData.isOwner;
+	groupData.view_thread_tools = groupData.isOwner;
 	
 	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
 		console.warn('未关联Cid', req.uid)

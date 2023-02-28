@@ -17,6 +17,9 @@ define("forum/clubs/details", [
 	"bootbox",
 	"alerts",
 	"utils",
+	'topicList',
+	'hooks',
+	'forum/infinitescroll',
 ], function (
 	memberList,
 	iconSelect,
@@ -29,7 +32,10 @@ define("forum/clubs/details", [
 	categorySelector,
 	bootbox,
 	alerts,
-	utils
+	utils,
+	topicList,
+	hooks,
+	infinitescroll
 ) {
 	const Details = {};
 	let groupName;
@@ -47,6 +53,24 @@ define("forum/clubs/details", [
 				// $("#myModal").modal("hide");
 			});
 		});
+		topicList.init('clubs', loadTopicsAfter);
+
+		function loadTopicsAfter(after, direction, callback) {
+			callback = callback || function () {};
+			hooks.fire('action:topics.loading');
+			const params = utils.params();
+			infinitescroll.loadMore('categories.loadMore', {
+				cid: ajaxify.data.cid,
+				after: after,
+				direction: direction,
+				query: params,
+				categoryTopicSort: config.categoryTopicSort,
+			}, function (data, done) {
+				hooks.fire('action:topics.loaded', { topics: data.topics });
+				callback(data, done);
+			});
+		}
+
 		const detailsPage = components.get("clubs/container");
 
 		Details.getUserWalletInfo()

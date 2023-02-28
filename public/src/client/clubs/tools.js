@@ -2,17 +2,17 @@
 'use strict';
 
 
-define('forum/category/tools', [
+define('forum/club/tools', [
 	'topicSelect',
-	'forum/topic/threadTools',
+	'forum/clubs/threadTools',
 	'components',
 	'api',
 	'bootbox',
 	'alerts',
 ], function (topicSelect, threadTools, components, api, bootbox, alerts) {
-	const CategoryTools = {};
+	const ClubTools = {};
 
-	CategoryTools.init = function () {
+	ClubTools.init = function () {
 		topicSelect.init(updateDropdownOptions);
 
 		handlePinnedTopicSort();
@@ -42,10 +42,9 @@ define('forum/category/tools', [
 			return false;
 		});
 
-		components.get('topic/pin').on('click', function (e) {
-			const ids = $(e.target)?.parents('[component="category/topic"]')[0]?.getAttribute('data-tid');
-			console.log('---------pin parent: ', ids);
-			categoryCommand('put', '/pin', 'pin', onCommandComplete, [Number(ids)]);
+		components.get('topic/pin').on('click', function () {
+			// return console.log('---------pin');
+			categoryCommand('put', '/pin', 'pin', onCommandComplete);
 			return false;
 		});
 
@@ -115,7 +114,7 @@ define('forum/category/tools', [
 			});
 		});
 
-		CategoryTools.removeListeners();
+		ClubTools.removeListeners();
 		socket.on('event:topic_deleted', setDeleteState);
 		socket.on('event:topic_restored', setDeleteState);
 		socket.on('event:topic_purged', onTopicPurged);
@@ -126,13 +125,11 @@ define('forum/category/tools', [
 		socket.on('event:topic_moved', onTopicMoved);
 	};
 
-	function categoryCommand(method, path, command, onComplete, ids) {
+	function categoryCommand(method, path, command, onComplete) {
 		if (!onComplete) {
 			onComplete = function () {};
 		}
-		const stids = topicSelect.getSelectedTids();
-		const tids = stids.length ? stids : ids;
-		console.log('categoryCommand debug：', tids, ids);
+		const tids = topicSelect.getSelectedTids();
 		const body = {};
 		const execute = function (ok) {
 			if (ok) {
@@ -163,7 +160,7 @@ define('forum/category/tools', [
 		}
 	}
 
-	CategoryTools.removeListeners = function () {
+	ClubTools.removeListeners = function () {
 		socket.removeListener('event:topic_deleted', setDeleteState);
 		socket.removeListener('event:topic_restored', setDeleteState);
 		socket.removeListener('event:topic_purged', onTopicPurged);
@@ -279,27 +276,22 @@ define('forum/category/tools', [
 	}
 
 	function handlePinnedTopicSort() {
-		console.log('handlePinnedTopicSort category: ', ajaxify.data.topics, ajaxify.data.template);
-		const isInClubsTopics = ajaxify.data.template.name === 'clubs/topics';
-		if (!isInClubsTopics) {
-			if (!ajaxify.data.topics || !ajaxify.data.template.category) {
-				return;
-			}
-		}
-		const numPinned = ajaxify.data.topics.filter(topic => topic.pinned).length;
-		console.log('handlePinnedTopicSort numPinned==:start ', numPinned, app.user);
-		if (!app.user.isAdmin && !app.user.isMod) return;
-		if (numPinned < 1) return;
-		if (!isInClubsTopics && numPinned < 2) {
+		console.log('handlePinnedTopicSort1：', ajaxify.data);
+		if (!ajaxify.data.topics || !ajaxify.data.template.category) {
 			return;
 		}
-		console.log('handlePinnedTopicSort numPinned==:end ');
+    console.log('handlePinnedTopicSort2');
+		const numPinned = ajaxify.data.topics.filter(topic => topic.pinned).length;
+		if ((!app.user.isAdmin && !app.user.isMod) || numPinned < 2) {
+			return;
+		}
+    console.log('handlePinnedTopicSort3');
 		app.loadJQueryUI(function () {
+      console.log('handlePinnedTopicSort app.loadJQueryUI');
 			const topicListEl = $('[component="category"]').filter(function (i, e) {
 				return !$(e).parents('[widget-area],[data-widget-area]').length;
 			});
 			let baseIndex = 0;
-			console.log('topicListEl= ', topicListEl);
 			topicListEl.sortable({
 				handle: '[component="topic/pinned"]',
 				items: '[component="category/topic"].pinned',
@@ -323,5 +315,5 @@ define('forum/category/tools', [
 		});
 	}
 
-	return CategoryTools;
+	return ClubTools;
 });
