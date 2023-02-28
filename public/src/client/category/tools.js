@@ -43,8 +43,9 @@ define('forum/category/tools', [
 		});
 
 		components.get('topic/pin').on('click', function () {
-			categoryCommand('put', '/pin', 'pin', onCommandComplete);
-			return false;
+			return console.log('---------pin');
+			// categoryCommand('put', '/pin', 'pin', onCommandComplete);
+			// return false;
 		});
 
 		components.get('topic/unpin').on('click', function () {
@@ -171,10 +172,12 @@ define('forum/category/tools', [
 	};
 
 	function closeDropDown() {
+		console.log('click---- menu--->>> close');
 		$('.thread-tools.open').find('.dropdown-toggle').trigger('click');
 	}
 
 	function onCommandComplete() {
+		console.log('--onCommandComplete--');
 		closeDropDown();
 		topicSelect.unselectAll();
 	}
@@ -252,6 +255,7 @@ define('forum/category/tools', [
 
 	function setPinnedState(data) {
 		const topic = getTopicEl(data.tid);
+		console.log('setPinedState===> ', data, topic);
 		topic.toggleClass('pinned', data.isPinned);
 		topic.find('[component="topic/pinned"]').toggleClass('hide', !data.isPinned);
 		ajaxify.refresh();
@@ -272,6 +276,7 @@ define('forum/category/tools', [
 	}
 
 	function handlePinnedTopicSort() {
+		console.log('handlePinnedTopicSort');
 		if (!ajaxify.data.topics || !ajaxify.data.template.category) {
 			return;
 		}

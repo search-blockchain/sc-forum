@@ -58,6 +58,9 @@ define('components', function () {
 		'chat/recent/room': function (roomid) {
 			return $('[component="chat/recent/room"][data-roomid="' + roomid + '"]');
 		},
+		'club/topic': function (tid) {
+			return $('[component=""][data-tid="]' + tid + '"]');
+		},
 	};
 
 	components.get = function () {

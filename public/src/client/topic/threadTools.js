@@ -173,7 +173,9 @@ define('forum/topic/threadTools', [
 	};
 
 	function renderMenu(container) {
+		console.log('render menu');
 		container.on('show.bs.dropdown', '.thread-tools', function () {
+			console.log('render menu: thread-tools');
 			const $this = $(this);
 			const dropdownMenu = $this.find('.dropdown-menu');
 			if (dropdownMenu.html()) {
