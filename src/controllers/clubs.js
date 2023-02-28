@@ -187,6 +187,9 @@ clubsController.details = async function (req, res, next) {
 	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
 	const ownerUids = await clubs.getOwners(clubName);
 	groupData.hasOwner = ownerUids.length > 0;
+	// const ownerUids = await clubs.getOwners(clubName);
+	// groupData.ownerUids = ownerUids;
+	groupData.showTopicTools = groupData.isOwner;
 	
 	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
 		console.warn('未关联Cid', req.uid)
@@ -288,7 +291,6 @@ clubsController.groupDetails = async function (req, res, next) {
 	if (!groupData) {
 		return next();
 	}
-	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
 
 	res.render('clubs/details', {
 		title: `[[pages:clubs, ${groupData.displayName}]]`,
