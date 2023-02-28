@@ -33,12 +33,11 @@ module.exports = function (Topics) {
 			lastposttime: 0,
 			postcount: 0,
 			viewcount: 0,
+			lucky: data.lucky
 		};
-
 		if (Array.isArray(data.tags) && data.tags.length) {
 			topicData.tags = data.tags.join(',');
 		}
-
 		const result = await plugins.hooks.fire('filter:topic.create', { topic: topicData, data: data });
 		topicData = result.topic;
 		await db.setObject(`topic:${topicData.tid}`, topicData);
@@ -62,6 +61,10 @@ module.exports = function (Topics) {
 				`cid:${topicData.cid}:tids:posts`,
 				`cid:${topicData.cid}:tids:views`,
 			], 0, topicData.tid),
+			db.sortedSetsAdd([
+				'topics:luckys',
+				`cid:${topicData.cid}:tids:luckys`,
+			], topicData.lucky, topicData.tid),
 			user.addTopicIdToUser(topicData.uid, topicData.tid, timestamp),
 			db.incrObjectField(`category:${topicData.cid}`, 'topic_count'),
 			db.incrObjectField('global', 'topicCount'),

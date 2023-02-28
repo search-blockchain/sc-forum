@@ -174,14 +174,6 @@ clubsController.details = async function (req, res, next) {
 			return next();
 		}
 	}
-	// const [groupData, posts] = await Promise.all([
-	// 	clubs.get(clubName, {
-	// 		uid: req.uid,
-	// 		truncateUserList: true,
-	// 		userListCount: 20,
-	// 	}),
-	// 	clubs.getLatestMemberPosts(clubName, 10, req.uid),
-	// ]);
 
 	const groupData = await clubs.get(clubName, {
 		uid: req.uid,
@@ -213,54 +205,21 @@ clubsController.details = async function (req, res, next) {
 		return
 	}
 
-	// console.log('列表，群组数据！！', groupData)
-	// const [categoryList, categoriesTids, posts] = await Promise.all([
-	// 	categories.getCategories(groupData.memberPostCidsArray),
-	// 	// groupData.memberPostCidsArray
-	// 	// categories.getTopicIds({cid: 4}),
-	// 	// groups.getLatestMemberPosts(groupName, 10, req.uid),
-	// ]);
-	// console.log('asdfasdfasdf??????????!!!!!!')
-	// console.log('分类跌表数据', categoryList)
-	// console.log('帖子id', categoriesTids)
+	//let query = await getTempQuery({ cid: groupData.memberPostCidsArray[0], uid: req.uid, req})
+	const [userSettings] = await Promise.all([
+		user.getSettings(req.uid)
+	]);
+    let query = {
+		uid: req.uid,
+		cid: req.body.cid,
+		start: req.body.start,
+		stop: req.body.stop,
+		sort: req.body.sort || userSettings.categoryTopicSort,
+		settings: userSettings
+	}
 
-	// const cid = req.params.category_id;
-
-	// let currentPage = parseInt(req.query.page, 10) || 1;
-	// let topicIndex = utils.isNumber(req.params.topic_index) ? parseInt(req.params.topic_index, 10) - 1 : 0;
-	// if ((req.params.topic_index && !utils.isNumber(req.params.topic_index)) || !utils.isNumber(cid)) {
-	// 	return next();
-	// }
-	// if (topicIndex < 0) {
-	// 	return helpers.redirect(res, `/clubs/${categoryFields.slug}?${qs.stringify(req.query)}`);
-	// }
-
-	// const userSettings = await user.getSettings(req.uid);
-	// if(userSettings.usePagination && currentPage < 1) {
-	// 	return next();
-	// }
-	
-	// if (!userSettings.usePagination) {
-	// 	topicIndex = Math.max(0, topicIndex - (Math.ceil(userSettings.topicsPerPage / 2) - 1));
-	// } else if (!req.query.page) {
-	// 	const index = Math.max(parseInt((topicIndex || 0), 10), 0);
-	// 	currentPage = Math.ceil((index + 1) / userSettings.topicsPerPage);
-	// 	topicIndex = 0;
-	// }
-
-	// const targetUid = await user.getUidByUserslug(req.query.author);
-	// const start = ((currentPage - 1) * userSettings.topicsPerPage) + topicIndex;
-	// const stop = start + userSettings.topicsPerPage - 1;
-
-
-	
-	let query = await getTempQuery({ cid: groupData.memberPostCidsArray[0], uid: req.uid, req})
+	//const topicList = await categories.getCategoryById(query)
 	const topicList = await categories.getCategoryById(query)
-	// console.log('按CID查询topic', topicList)
-	// console.log('查看回复？', topicList.length, topicList.topics[2])
-	// const ttid = 7
-	// const topicData = await topics.getTopicData(ttid)
-	// console.log('数据比对——完整帖子', topicData)
 
 	const fullTopics = await Promise.all(topicList.topics.map(async (topicData) => {
 		// 参考controller/topic
@@ -269,71 +228,20 @@ clubsController.details = async function (req, res, next) {
 		const start = 1
 		const stop = 50
 		await topics.getTopicWithPosts(topicData, set, req.uid, start, stop, reverse);
-		console.log('追加psot数据？', topicData.tid, topicData.posts.length)
 		return topicData
 	}))
-	// topicList.topics = fullTopics
-
-	// console.log('完整的主题数据', fullTopics)
 	
-	// 参考controller/topic
-	// const topicData = topicList.topics[0]
-	// const set = `tid:${ttid}:posts:votes` // sort === 'most_votes' ? `tid:${tid}:posts:votes` : `tid:${tid}:posts`;
-	// const reverse = true; // sort === 'newest_to_oldest' || sort === 'most_votes';
-	// const start = 1
-	// const stop = 50
-	// await topics.getTopicWithPosts(topicData, set, req.uid, start, stop, reverse);
-
-	// console.log('追加psot数据？', topicData)
-
-	
-
-	// const [details] = await Promise.all(categoryList.map(async (item) => {
-	// 	let topicss = await categories.getCategoryTopics(item)
-	// 	// {
-	// 	// 	uid: socket.uid,
-	// 	// 	cid: data.cid,
-	// 	// 	start: start,
-	// 	// 	stop: stop,
-	// 	// 	sort: sort,
-	// 	// 	settings: settings,
-	// 	// 	query: data.query,
-	// 	// 	tag: data.query.tag,
-	// 	// 	targetUid: targetUid,
-	// 	// }
-	// 	console.log('查询topic详情？？', topicss)
-	// 	return topicss
-	// 	// topics.getTopicsData(tids)
-	// 	// await topics.getTopicsByTids()
-	// }))
-
-	// console.log('群组主题内容', categoryList)
-	// console.log('分类的topic内容！', details)
-
-	
-	// if(!req.cid) {
-	// 	const [groupData, allowGroupCreation] = await Promise.all([
-	// 		groups.getGroupsBySort(sort, 0, 50),
-	// 	}
-
-	// }
-	
-	// console.log('完整topic数据', fullTopics)
-	
-	// console.log('group数据', groupData)
 	res.render('clubs/topics', {
-		currentUID: req.uid,
-		title: `[[pages:clubs, ${groupData.displayName}]]`,
-		group: groupData,
+		//currentUID: req.uid,
+		//title: `[[pages:clubs, ${groupData.displayName}]]`,
+		//group: groupData,
 		category: topicList,
-		topics: fullTopics,
-		// categories: categoryList,
-		// posts: posts,
-		isAdmin: isAdmin,
-		isGlobalMod: isGlobalMod,
-		allowPrivateGroups: meta.config.allowPrivateGroups,
-		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
-		...fullTopics[0]
+		//topics: fullTopics,
+		//isAdmin: isAdmin,
+		//isGlobalMod: isGlobalMod,
+		//allowPrivateGroups: meta.config.allowPrivateGroups,
+		//breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
+		//...fullTopics[0]
 	});
 };
 

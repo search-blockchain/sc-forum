@@ -23,7 +23,6 @@ const relative_path = nconf.get('relative_path');
 
 categoryController.get = async function (req, res, next) {
 	const cid = req.params.category_id;
-
 	let currentPage = parseInt(req.query.page, 10) || 1;
 	let topicIndex = utils.isNumber(req.params.topic_index) ? parseInt(req.params.topic_index, 10) - 1 : 0;
 	if ((req.params.topic_index && !utils.isNumber(req.params.topic_index)) || !utils.isNumber(cid)) {

@@ -10,6 +10,7 @@ const plugins = require('../plugins');
 const privileges = require('../privileges');
 const cache = require('../cache');
 const meta = require('../meta');
+const { topic } = require('../middleware/assert');
 
 const Categories = module.exports;
 
@@ -31,16 +32,12 @@ Categories.exists = async function (cids) {
 };
 
 Categories.getCategoryById = async function (data) {
-	console.log('查询筛选项', data)
-
 	const categories = await Categories.getCategories([data.cid], data.uid);
 	if (!categories[0]) {
 		return null;
 	}
 	const category = categories[0];
 	data.category = category;
-
-	console.log('分类对象数据', data)
 
 	const promises = [
 		Categories.getCategoryTopics(data),
@@ -53,7 +50,7 @@ Categories.getCategoryById = async function (data) {
 		promises.push(Categories.getCategoryData(category.parentCid));
 	}
 	const [topics, topicCount, watchState, , parent] = await Promise.all(promises);
-
+	
 	category.topics = topics.topics;
 	category.nextStart = topics.nextStart;
 	category.topic_count = topicCount;
@@ -67,7 +64,6 @@ Categories.getCategoryById = async function (data) {
 		category: category,
 		...data,
 	});
-	// console.log('分类查询topic数据？？',  result.category)
 	return result.category;
 };
 
