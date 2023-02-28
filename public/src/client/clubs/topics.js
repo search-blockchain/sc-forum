@@ -17,6 +17,7 @@ define("forum/clubs/details", [
 	"bootbox",
 	"alerts",
 	"utils",
+	'forum/clubs/threadTools',
 ], function (
 	memberList,
 	iconSelect,
@@ -29,7 +30,8 @@ define("forum/clubs/details", [
 	categorySelector,
 	bootbox,
 	alerts,
-	utils
+	utils,
+	threadTools
 ) {
 	const Details = {};
 	let groupName;
@@ -54,6 +56,11 @@ define("forum/clubs/details", [
 				userWalletInfo = res;
 			})
 			.catch((err) => {});
+
+			// TODO 7需改为动态获取tid
+			// clubs/threadTools.js中已有示例
+			threadTools.init(7, $('.club'));
+
 
 		// $("#myModal").on("hide.bs.modal", function () {
 		// 	// remove the event listeners when the dialog is dismissed
