@@ -42,10 +42,8 @@ define('forum/category/tools', [
 			return false;
 		});
 
-		components.get('topic/pin').on('click', function (e) {
-			const ids = $(e.target)?.parents('[component="category/topic"]')[0]?.getAttribute('data-tid');
-			console.log('---------pin parent: ', ids);
-			categoryCommand('put', '/pin', 'pin', onCommandComplete, [Number(ids)]);
+		components.get('topic/pin').on('click', function () {
+			categoryCommand('put', '/pin', 'pin', onCommandComplete);
 			return false;
 		});
 
@@ -126,13 +124,11 @@ define('forum/category/tools', [
 		socket.on('event:topic_moved', onTopicMoved);
 	};
 
-	function categoryCommand(method, path, command, onComplete, ids) {
+	function categoryCommand(method, path, command, onComplete) {
 		if (!onComplete) {
 			onComplete = function () {};
 		}
-		const stids = topicSelect.getSelectedTids();
-		const tids = stids.length ? stids : ids;
-		console.log('categoryCommand debug：', tids, ids);
+		const tids = topicSelect.getSelectedTids();
 		const body = {};
 		const execute = function (ok) {
 			if (ok) {

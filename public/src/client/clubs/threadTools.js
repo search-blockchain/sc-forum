@@ -12,49 +12,47 @@ define('forum/clubs/threadTools', [
 	'alerts',
 ], function (components, translator, handleBack, posts, api, hooks, bootbox, alerts) {
 	const ThreadTools = {};
-
-	ThreadTools.init = function (tid, topicContainer) {
+	ThreadTools.init = function (topicContainer) {
 		renderMenu(topicContainer);
-
-		// function topicCommand(method, path, command, onComplete) {
-		topicContainer.on('click', '[component="topic/delete"]', function () {
-			topicCommand('del', '/state', 'delete');
+		topicContainer.on('click', '[component="topic/delete"]', function (e) {
+			topicCommand.call(e.target, 'del', '/state', 'delete');
 			return false;
 		});
 
-		topicContainer.on('click', '[component="topic/restore"]', function () {
-			topicCommand('put', '/state', 'restore');
+		topicContainer.on('click', '[component="topic/restore"]', function (e) {
+			topicCommand.call(e.target, 'put', '/state', 'restore');
 			return false;
 		});
 
-		topicContainer.on('click', '[component="topic/purge"]', function () {
-			topicCommand('del', '', 'purge');
+		topicContainer.on('click', '[component="topic/purge"]', function (e) {
+      topicCommand.call(e.target, 'del', '', 'purge');
 			return false;
 		});
 
-		topicContainer.on('click', '[component="topic/lock"]', function () {
-			topicCommand('put', '/lock', 'lock');
+		topicContainer.on('click', '[component="topic/lock"]', function (e) {
+			topicCommand.call(e.target, 'put', '/lock', 'lock');
 			return false;
 		});
 
-		topicContainer.on('click', '[component="topic/unlock"]', function () {
-			topicCommand('del', '/lock', 'unlock');
+		topicContainer.on('click', '[component="topic/unlock"]', function (e) {
+			topicCommand.call(e.target, 'del', '/lock', 'unlock');
 			return false;
 		});
 
-		topicContainer.on('click', '[component="topic/pin"]', function () {
-			topicCommand('put', '/pin', 'pin');
+		topicContainer.on('click', '[component="topic/pin"]', function (e) {
+			topicCommand.call(e.target, 'put', '/pin', 'pin');
 			return false;
 		});
 
-		topicContainer.on('click', '[component="topic/unpin"]', function () {
-			topicCommand('del', '/pin', 'unpin');
+		topicContainer.on('click', '[component="topic/unpin"]', function (e) {
+			topicCommand.call(e.target, 'del', '/pin', 'unpin');
 			return false;
 		});
 
 		topicContainer.on('click', '[component="topic/event/delete"]', function () {
 			const eventId = $(this).attr('data-topic-event-id');
 			const eventEl = $(this).parents('[component="topic/event"]');
+			const tid = getTid($(this));
 			bootbox.confirm('[[topic:delete-event-confirm]]', (ok) => {
 				if (ok) {
 					api.del(`/topics/${tid}/events/${eventId}`, {})
@@ -68,6 +66,7 @@ define('forum/clubs/threadTools', [
 
 		// todo: should also use topicCommand, but no write api call exists for this yet
 		topicContainer.on('click', '[component="topic/mark-unread"]', function () {
+			const tid = getTid($(this));
 			socket.emit('topics.markUnread', tid, function (err) {
 				if (err) {
 					return alerts.error(err);
@@ -88,6 +87,7 @@ define('forum/clubs/threadTools', [
 
 		topicContainer.on('click', '[component="topic/mark-unread-for-all"]', function () {
 			const btn = $(this);
+			const tid = getTid($(this));
 			socket.emit('topics.markAsUnreadForAll', [tid], function (err) {
 				if (err) {
 					return alerts.error(err);
@@ -99,6 +99,7 @@ define('forum/clubs/threadTools', [
 		});
 
 		topicContainer.on('click', '[component="topic/move"]', function () {
+			const tid = getTid($(this));
 			require(['forum/topic/move'], function (move) {
 				move.init([tid], ajaxify.data.cid);
 			});
@@ -135,6 +136,7 @@ define('forum/clubs/threadTools', [
 
 		function changeWatching(type, state = 1) {
 			const method = state ? 'put' : 'del';
+			const tid = getTid($(this));
 			api[method](`/topics/${tid}/${type}`, {}, () => {
 				let message = '';
 				if (type === 'follow') {
@@ -173,21 +175,23 @@ define('forum/clubs/threadTools', [
 	};
 
 	function renderMenu(container) {
-		console.log('render menu clubs');
+		console.log('render menu: ', container);
 		container.on('show.bs.dropdown', '.thread-tools', function () {
-			console.log('render menu clubs: thread-tools');
 			const $this = $(this);
+
+			console.log('render menu: thread-tools：', $this);
+			const tid = getTid($(this)) || ajaxify.data.tid;
+			const cid = getCid($(this)) || ajaxify.data.cid;
 			const dropdownMenu = $this.find('.dropdown-menu');
 			if (dropdownMenu.html()) {
 				return;
 			}
 
 			dropdownMenu.toggleClass('hidden', true);
-			socket.emit('topics.loadTopicTools', { tid: ajaxify.data.tid, cid: ajaxify.data.cid }, function (err, data) {
+			socket.emit('topics.loadTopicTools', { tid, cid }, function (err, data) {
 				if (err) {
 					return alerts.error(err);
 				}
-        console.log('trigger ----- ');
 				app.parseAndTranslate('partials/clubs/topic-menu-list', data, function (html) {
 					dropdownMenu.html(html);
 					dropdownMenu.toggleClass('hidden', false);
@@ -204,13 +208,19 @@ define('forum/clubs/threadTools', [
 		if (!onComplete) {
 			onComplete = function () {};
 		}
-		const tid = ajaxify.data.tid;
+		const tid = getTid($(this)) || ajaxify.data.tid;
+		console.log('触发的tid--===', tid, tid);
 		const body = {};
 		const execute = function (ok) {
 			if (ok) {
 				api[method](`/topics/${tid}${path}`, body)
-					.then(onComplete)
+					.then(() => {
+						onComplete();
+						ajaxify.refresh();
+					})
 					.catch(alerts.error);
+			} else {
+				ajaxify.refresh();
 			}
 		};
 
@@ -218,6 +228,7 @@ define('forum/clubs/threadTools', [
 			case 'delete':
 			case 'restore':
 			case 'purge':
+				console.log('===== alert');
 				bootbox.confirm(`[[topic:thread_tools.${command}_confirm]]`, execute);
 				break;
 
@@ -334,11 +345,11 @@ define('forum/clubs/threadTools', [
 
 
 	ThreadTools.setPinnedState = function (data) {
+		console.log('setPinnedState 刷新-----');
 		const threadEl = components.get('topic');
 		if (parseInt(data.tid, 10) !== parseInt(threadEl.attr('data-tid'), 10)) {
 			return;
 		}
-
 		components.get('topic/pin').toggleClass('hidden', data.pinned).parent().attr('hidden', data.pinned ? '' : null);
 		components.get('topic/unpin').toggleClass('hidden', !data.pinned).parent().attr('hidden', !data.pinned ? '' : null);
 		const icon = $('[component="topic/labels"] [component="topic/pinned"]');
@@ -351,7 +362,6 @@ define('forum/clubs/threadTools', [
 			));
 		}
 		ajaxify.data.pinned = data.pinned;
-
 		posts.addTopicEvents(data.events);
 	};
 
@@ -378,6 +388,13 @@ define('forum/clubs/threadTools', [
 		menu = components.get('topic/ignoring/menu');
 		menu.toggleClass('hidden', state !== 'ignore');
 		components.get('topic/ignoring/check').toggleClass('fa-check', state === 'ignore');
+	}
+
+	function getTid($node) {
+		return $node.parents('[component="category/topic"]')?.attr('data-tid');
+	}
+	function getCid($node) {
+		return $node.parents('[component="category/topic"]')?.attr('data-cid');
 	}
 
 	return ThreadTools;
