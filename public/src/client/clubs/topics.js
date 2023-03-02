@@ -156,11 +156,10 @@ define("forum/clubs/details", [
 	};
 	Details.getUserWalletInfo = function () {
 		return new Promise((resolve, reject) => {
-			console.log("cndjn");
 			const objFromApp = utils.getCookie("forumdata");
 			if (!objFromApp) {
 				alerts.error("未登录");
-				return reject("未登录");
+				return reject("无关联的appuser数据");
 			}
 			userId = objFromApp.userId;
 			token = objFromApp.token;

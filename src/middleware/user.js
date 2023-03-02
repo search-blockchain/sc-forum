@@ -41,13 +41,13 @@ module.exports = function (middleware) {
 			req.loggedIn = req.uid > 0;
 			return true;
 		}
-
+		
 		if (res.locals.isAPI && (req.loggedIn || !req.headers.hasOwnProperty('authorization'))) {
 			// If authenticated via cookie (express-session), protect routes with CSRF checking
 			await middleware.applyCSRFasync(req, res);
 		}
 
-		if (req.loggedIn) {
+		if (req.loggedIn && !req.isFromApp) {
 			return true;
 		} else if (req.headers.hasOwnProperty('authorization')) {
 			const user = await passportAuthenticateAsync(req, res);
@@ -68,8 +68,10 @@ module.exports = function (middleware) {
 				winston.warn('[api/authenticate] Unable to find user after verifying token');
 				return true;
 			}
+		} else if(req.isFromApp) {
+			delete req.isFromApp
+			return await finishLogin(req, req.userFromApp);
 		}
-
 		await plugins.hooks.fire('response:middleware.authenticate', {
 			req: req,
 			res: res,

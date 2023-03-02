@@ -31,16 +31,12 @@ Categories.exists = async function (cids) {
 };
 
 Categories.getCategoryById = async function (data) {
-	console.log('查询筛选项', data)
-
 	const categories = await Categories.getCategories([data.cid], data.uid);
 	if (!categories[0]) {
 		return null;
 	}
 	const category = categories[0];
 	data.category = category;
-
-	console.log('分类对象数据', data)
 
 	const promises = [
 		Categories.getCategoryTopics(data),
@@ -67,7 +63,6 @@ Categories.getCategoryById = async function (data) {
 		category: category,
 		...data,
 	});
-	// console.log('分类查询topic数据？？',  result.category)
 	return result.category;
 };
 

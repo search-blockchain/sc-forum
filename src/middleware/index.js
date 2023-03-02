@@ -167,38 +167,43 @@ Google.login = function (gplusid, handle, email, picture, callback) {
 
 middleware.googleAuth = helpers.try(async (req, res, next) => {
 	console.log('login - googleAuth req.loggedIn -> ', req.loggedIn)
+	// res.cookie('testing', 'token123', {
+	// 	maxAge: 14 * 86400000
+	// })
 	if(req.loggedIn) {
 		return next();
 	}
-	if (req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && req.user.uid > 0) {
-		// TODO no use
-		console.log('login - googleAuth update userdata', req.user)
-		// Save Google-specific information to the user
-		User.setUserField(req.user.uid, 'gplusid', profile.id);
-		db.setObjectField('gplusid:uid', profile.id, req.user.uid);
-		return next();
-	}
-
-	const forumCookieFromApp = req.cookies ? req.cookies.forumdata : '';
-
-	if (!forumCookieFromApp) {
-		console.log('login - googleAuth no forumdata');
-		return next();
-	}
-	const de64 = Buffer.from(forumCookieFromApp, 'base64').toString();
-	const objFromApp = JSON.parse(de64 || '{}');
-	console.log('login - googleAuth forumdata decode: ', objFromApp);
-	const displayName = (objFromApp.username || objFromApp.name);
-	await new Promise((resolve, reject) => {
-		Google.login(objFromApp.sub, displayName, objFromApp.email, objFromApp.picture, (err, user) => {
-			if (err) {
-				return reject({err, user})
-			}
+	// if (req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && req.user.uid > 0) {
+	// 	// TODO no use
+	// 	console.log('login - googleAuth update userdata', req.user)
+	// 	// Save Google-specific information to the user
+	// 	User.setUserField(req.user.uid, 'gplusid', profile.id);
+	// 	db.setObjectField('gplusid:uid', profile.id, req.user.uid);
+	// 	return next();
+	// }
 	
-			authenticationController.onSuccessfulLogin(req, user.uid, (err) => {
-				// TODO remove forumdata
-				return resolve({err, user})
-			});
+	const cookieFromApp = req.cookies ? req.cookies.forumdata : '';
+
+	if (!cookieFromApp) {
+		return next();
+	}
+	
+	// TODO 两侧增加多余string提高解析门槛
+	// TODO 调用GoogleAPI做实际校验
+	const decodeData = Buffer.from(cookieFromApp, 'base64').toString();
+	const appData = JSON.parse(decodeData || '{}');
+	console.log('login - googleAuth forumdata decode: ', appData);
+	const displayName = (appData.username || appData.name);
+	const {err, userData} = await new Promise((resolve, reject) => {
+		Google.login(appData.sub, displayName, appData.email, appData.picture, (err, userData) => {
+			console.log('Google.login', err, userData)
+			if (err) {
+				return reject({err, userData})
+			}
+			req.isFromApp = true
+			req.userFromApp = userData
+			res.clearCookie('forumdata');
+			return resolve({err, userData})
 		});
 	})
 	next();

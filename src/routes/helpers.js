@@ -16,12 +16,12 @@ helpers.setupPageRoute = function (...args) {
 	}
 
 	middlewares = [
+		middleware.googleAuth,
 		middleware.authenticateRequest,
 		middleware.maintenanceMode,
 		middleware.registrationComplete,
 		middleware.pluginHooks,
 		...middlewares,
-		middleware.googleAuth,
 		middleware.pageView
 	];
 

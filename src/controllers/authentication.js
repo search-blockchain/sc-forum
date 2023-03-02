@@ -372,9 +372,9 @@ authenticationController.onSuccessfulLogin = async function (req, uid) {
 		// Associate IP used during login with user account
 		req.session.meta.ip = req.ip;
 
-		req.session.passport = {
-			user: uid
-		}
+		// req.session.passport = {
+		// 	user: uid
+		// }
 
 		// Associate metadata retrieved via user-agent
 		req.session.meta = _.extend(req.session.meta, {
