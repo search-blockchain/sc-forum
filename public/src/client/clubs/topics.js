@@ -249,7 +249,7 @@ define("forum/clubs/details", [
 			Details.buyActiveCode()
 			.then((res) => {
 				clubPrice = res;
-				$("#clubPrice").text = clubPrice
+				$("#clubPrice").text(clubPrice)
 			})
 			.catch((err) => {});
 			$(".modal-footer").empty();
