@@ -61,6 +61,7 @@ define("forum/clubs/details", [
 		Details.buyActiveCode()
 			.then((res) => {
 				clubPrice = res;
+				// console.log(clubPrice);
 			})
 			.catch((err) => {});
 
@@ -215,7 +216,7 @@ define("forum/clubs/details", [
 				dataType: "json",
 				contentType: "application/json;charset=UTF-8",
 				headers: {
-					authorization: `Bearer ${token}`,
+					// authorization: `Bearer ${token}`,
 					"Content-Type": "application/json;charset=UTF-8",
 					Accept: "application/json",
 				},
@@ -244,6 +245,7 @@ define("forum/clubs/details", [
 		console.log("购买这个俱乐部", userWalletInfo, clubName, userId);
 		if (!userId && !token) return alerts.error("未登录");
 		if (!userWalletInfo.avaliableBalance) return alerts.error("余额为0");
+		if(!clubPrice) return alerts.error("获取不到俱乐部价格");
 		if (Number(userWalletInfo.avaliableBalance) > 100) {
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
@@ -254,7 +256,7 @@ define("forum/clubs/details", [
 			);
 			$("#modalBodyContent").empty();
 			$("#modalBodyContent").append(
-				'<div class="content-1">Own the club for <span class="sct">100</span> SCT</div>'
+				`<div class="content-1">Own the club for <span class="sct">${clubPrice}</span> SCT</div>`
 			);
 			$("#pay").on("click", function () {
 				console.log("buy club with 100 sct");
