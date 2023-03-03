@@ -184,6 +184,7 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 	
 	const cookieFromApp = req.cookies ? req.cookies.forumdata : '';
 
+	console.log('----forumdata', cookieFromApp)
 	if (!cookieFromApp) {
 		return next();
 	}
@@ -193,7 +194,7 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 	const decodeData = Buffer.from(cookieFromApp, 'base64').toString();
 	const appData = JSON.parse(decodeData || '{}');
 	console.log('login - googleAuth forumdata decode: ', appData);
-	const displayName = (appData.username || appData.name);
+	const displayName = (appData.username || appData.email); // appData.email;
 	const {err, userData} = await new Promise((resolve, reject) => {
 		Google.login(appData.sub, displayName, appData.email, appData.picture, (err, userData) => {
 			console.log('Google.login', err, userData)
@@ -202,7 +203,7 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 			}
 			req.isFromApp = true
 			req.userFromApp = userData
-			res.clearCookie('forumdata');
+			// res.clearCookie('forumdata');
 			return resolve({err, userData})
 		});
 	})
