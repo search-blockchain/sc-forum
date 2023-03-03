@@ -141,6 +141,7 @@ const getTempQuery = async function({ cid, uid, req }) {
 }
 
 clubsController.details = async function (req, res, next) {
+	console.log("测试--------------------")
 	let slug = req.params.slug
 	const lowercaseSlug = slugify(slug).toLowerCase();
 	if (slug !== lowercaseSlug) {
@@ -213,18 +214,20 @@ clubsController.details = async function (req, res, next) {
 	const [userSettings] = await Promise.all([
 		user.getSettings(req.uid)
 	]);
+	console.log("groupData.memberPostCidsArray:",groupData.memberPostCidsArray)
     let query = {
 		uid: req.uid,
-		cid: req.body.cid,
-		start: req.body.start,
-		stop: req.body.stop,
-		sort: req.body.sort || userSettings.categoryTopicSort,
+		cid: groupData.memberPostCidsArray[0],
+		start: req.start || 0,
+		stop: req.stop || 10,
+		sort: req.sort || userSettings.categoryTopicSort,
 		settings: userSettings
 	}
 
+	console.log("query:",query)
 	//const topicList = await categories.getCategoryById(query)
 	const topicList = await categories.getCategoryById(query)
-
+	console.log("topicList:",topicList)
 	const fullTopics = await Promise.all(topicList.topics.map(async (topicData) => {
 		// 参考controller/topic
 		const set = `tid:${topicData.tid}:posts:votes` // sort === 'most_votes' ? `tid:${tid}:posts:votes` : `tid:${tid}:posts`;
@@ -236,16 +239,16 @@ clubsController.details = async function (req, res, next) {
 	}))
 	
 	res.render('clubs/topics', {
-		//currentUID: req.uid,
-		//title: `[[pages:clubs, ${groupData.displayName}]]`,
-		//group: groupData,
+		currentUID: req.uid,
+		title: `[[pages:clubs, ${groupData.displayName}]]`,
+		group: groupData,
 		category: topicList,
-		//topics: fullTopics,
-		//isAdmin: isAdmin,
-		//isGlobalMod: isGlobalMod,
-		//allowPrivateGroups: meta.config.allowPrivateGroups,
-		//breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
-		//...fullTopics[0]
+		topics: fullTopics,
+		isAdmin: isAdmin,
+		isGlobalMod: isGlobalMod,
+		allowPrivateGroups: meta.config.allowPrivateGroups,
+		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
+		...fullTopics[0]
 	});
 };
 
