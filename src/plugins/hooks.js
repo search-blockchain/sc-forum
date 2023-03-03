@@ -130,7 +130,6 @@ Hooks.fire = async function (hook, params) {
 		deleteCaller = true;
 	}
 	const result = await hookTypeToMethod[hookType](hook, hookList, params);
-
 	if (hook !== 'action:plugins.firehook' && hook !== 'filter:plugins.firehook') {
 		const payload = await Hooks.fire('filter:plugins.firehook', { hook: hook, params: result || params });
 		Hooks.fire('action:plugins.firehook', payload);
