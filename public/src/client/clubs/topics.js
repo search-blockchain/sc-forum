@@ -17,7 +17,7 @@ define("forum/clubs/details", [
 	"bootbox",
 	"alerts",
 	"utils",
-	'forum/clubs/threadTools',
+	"forum/clubs/threadTools",
 ], function (
 	memberList,
 	iconSelect,
@@ -39,6 +39,7 @@ define("forum/clubs/details", [
 
 	let token = "";
 	let clubName = $("#buyBtn").data("name");
+	let clubPrice = 0;
 	let userId = "";
 
 	Details.init = function () {
@@ -57,9 +58,15 @@ define("forum/clubs/details", [
 			})
 			.catch((err) => {});
 
-			// TODO 7需改为动态获取tid
-			// clubs/threadTools.js中已有示例
-			threadTools.init($('.page-clubs'));
+		Details.buyActiveCode()
+			.then((res) => {
+				clubPrice = res;
+			})
+			.catch((err) => {});
+
+		// TODO 7需改为动态获取tid
+		// clubs/threadTools.js中已有示例
+		threadTools.init($(".page-clubs"));
 		// $("#myModal").on("hide.bs.modal", function () {
 		// 	// remove the event listeners when the dialog is dismissed
 		// 	$("#myModal a.btn").off("click");
@@ -155,7 +162,7 @@ define("forum/clubs/details", [
 		});
 	};
 	Details.getUserWalletInfo = function () {
-		return new Promise((resolve, reject) => {
+		return new Promise(function (resolve, reject) {
 			const objFromApp = utils.getCookie("forumdata");
 			if (!objFromApp) {
 				alerts.error("未登录");
@@ -197,6 +204,39 @@ define("forum/clubs/details", [
 					},
 				}
 			);
+		});
+	};
+	Details.buyActiveCode = function () {
+		console.log(clubName);
+		return new Promise(function (resolve, reject) {
+			$.ajax({
+				url: "https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWallet/buyActiveCode",
+				method: "POST",
+				dataType: "json",
+				contentType: "application/json;charset=UTF-8",
+				headers: {
+					authorization: `Bearer ${token}`,
+					"Content-Type": "application/json;charset=UTF-8",
+					Accept: "application/json",
+				},
+				data: JSON.stringify({
+					clubName,
+				}),
+				success: function (res) {
+					console.log("buyActiveCode", res);
+					if (res.data && +res.code === 200) {
+						resolve(res.data.amount)
+					} else {
+						alerts.error(res.message || "get club price failed");
+						reject(res.message || "get club price failed");
+					}
+				},
+				error: function (err) {
+					console.log("buyActiveCode", err);
+					alerts.error("get club price failed");
+					reject(err);
+				},
+			});
 		});
 	};
 
@@ -249,7 +289,7 @@ define("forum/clubs/details", [
 							if (res.data && +res.code === 200) {
 								alerts.success("buy successfully");
 							} else {
-								alerts.success(res.message || "pay failed");
+								alerts.error(res.message || "pay failed");
 							}
 						},
 						error: function (err) {
