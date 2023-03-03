@@ -121,8 +121,6 @@ topicsController.get = async function getTopic(req, res, next) {
 		res.locals.linkTags.push(rel);
 	});
 
-	console.log('主题topic', topicData)
-
 	res.render('topic', topicData);
 };
 

@@ -10,6 +10,7 @@ const plugins = require('../plugins');
 const privileges = require('../privileges');
 const cache = require('../cache');
 const meta = require('../meta');
+const { topic } = require('../middleware/assert');
 
 const Categories = module.exports;
 
@@ -49,7 +50,7 @@ Categories.getCategoryById = async function (data) {
 		promises.push(Categories.getCategoryData(category.parentCid));
 	}
 	const [topics, topicCount, watchState, , parent] = await Promise.all(promises);
-
+	
 	category.topics = topics.topics;
 	category.nextStart = topics.nextStart;
 	category.topic_count = topicCount;

@@ -41,6 +41,7 @@ module.exports = function (Categories) {
 			`cid:${cid}:tids:posts`,
 			`cid:${cid}:tids:votes`,
 			`cid:${cid}:tids:views`,
+			`cid:${cid}:tids:luckys`,
 			`cid:${cid}:tids:lastposttime`,
 			`cid:${cid}:recent_tids`,
 			`cid:${cid}:pids`,

@@ -54,7 +54,6 @@ topicsAPI.create = async function (caller, data) {
 	if (shouldQueue) {
 		return await posts.addToQueue(payload);
 	}
-
 	const result = await topics.post(payload);
 	await topics.thumbs.migrate(data.uuid, result.topicData.tid);
 

@@ -267,6 +267,7 @@ module.exports = function (Topics) {
 			bulk.push([`cid:${cid}:tids:posts`, topicData.postcount, tid]);
 			bulk.push([`cid:${cid}:tids:votes`, votes, tid]);
 			bulk.push([`cid:${cid}:tids:views`, topicData.viewcount, tid]);
+			bulk.push([`cid:${cid}:tids:luckys`, topicData.luckycount, tid]);
 		}
 		await db.sortedSetAddBulk(bulk);
 
