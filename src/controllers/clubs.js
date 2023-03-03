@@ -141,6 +141,7 @@ const getTempQuery = async function({ cid, uid, req }) {
 }
 
 clubsController.details = async function (req, res, next) {
+	console.log("测试--------------------")
 	let slug = req.params.slug
 	const lowercaseSlug = slugify(slug).toLowerCase();
 	if (slug !== lowercaseSlug) {
@@ -236,16 +237,16 @@ clubsController.details = async function (req, res, next) {
 	}))
 	
 	res.render('clubs/topics', {
-		//currentUID: req.uid,
-		//title: `[[pages:clubs, ${groupData.displayName}]]`,
-		//group: groupData,
+		currentUID: req.uid,
+		title: `[[pages:clubs, ${groupData.displayName}]]`,
+		group: groupData,
 		category: topicList,
-		//topics: fullTopics,
-		//isAdmin: isAdmin,
-		//isGlobalMod: isGlobalMod,
-		//allowPrivateGroups: meta.config.allowPrivateGroups,
-		//breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
-		//...fullTopics[0]
+		topics: fullTopics,
+		isAdmin: isAdmin,
+		isGlobalMod: isGlobalMod,
+		allowPrivateGroups: meta.config.allowPrivateGroups,
+		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
+		...fullTopics[0]
 	});
 };
 
