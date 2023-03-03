@@ -214,18 +214,20 @@ clubsController.details = async function (req, res, next) {
 	const [userSettings] = await Promise.all([
 		user.getSettings(req.uid)
 	]);
+	console.log("groupData.memberPostCidsArray:",groupData.memberPostCidsArray)
     let query = {
 		uid: req.uid,
-		cid: req.body.cid,
-		start: req.body.start,
-		stop: req.body.stop,
+		cid: groupData.memberPostCidsArray[0],
+		start: req.start || 0,
+		stop: req.stop || 10,
 		sort: req.body.sort || userSettings.categoryTopicSort,
 		settings: userSettings
 	}
 
+	console.log("query:",query)
 	//const topicList = await categories.getCategoryById(query)
 	const topicList = await categories.getCategoryById(query)
-
+	console.log("topicList:",topicList)
 	const fullTopics = await Promise.all(topicList.topics.map(async (topicData) => {
 		// 参考controller/topic
 		const set = `tid:${topicData.tid}:posts:votes` // sort === 'most_votes' ? `tid:${tid}:posts:votes` : `tid:${tid}:posts`;
