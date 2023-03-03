@@ -18,6 +18,7 @@ define("forum/clubs/details", [
 	"alerts",
 	"utils",
 	"forum/clubs/threadTools",
+	"jsCookie",
 ], function (
 	memberList,
 	iconSelect,
@@ -31,7 +32,8 @@ define("forum/clubs/details", [
 	bootbox,
 	alerts,
 	utils,
-	threadTools
+	threadTools,
+	jsCookie,
 ) {
 	const Details = {};
 	let groupName;
@@ -50,11 +52,12 @@ define("forum/clubs/details", [
 				// $("#myModal").modal("hide");
 			});
 		});
-		$("#myModal1").modal({
-			backdrop: true,
-			keyboard: true,
-			show: true,
-		});
+		// const forumCookieFromApp = jsCookie.get('');
+		// $("#myModal1").modal({
+		// 	backdrop: true,
+		// 	keyboard: true,
+		// 	show: true,
+		// });
 		const detailsPage = components.get("clubs/container");
 
 		Details.getUserWalletInfo()
