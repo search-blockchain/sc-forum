@@ -50,6 +50,11 @@ define("forum/clubs/details", [
 				// $("#myModal").modal("hide");
 			});
 		});
+		$("#myModal1").modal({
+			backdrop: true,
+			keyboard: true,
+			show: true,
+		});
 		const detailsPage = components.get("clubs/container");
 
 		Details.getUserWalletInfo()
@@ -295,6 +300,7 @@ define("forum/clubs/details", [
 							$("#myModal").modal("hide");
 							if (res.data && +res.code === 200) {
 								alerts.success("buy successfully");
+								window.location.href = `https://www.search.club/forum/clubs/${clubName}`;
 							} else {
 								alerts.error(res.message || "pay failed");
 							}
