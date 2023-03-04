@@ -18,7 +18,6 @@ define("forum/clubs/details", [
 	"alerts",
 	"utils",
 	"forum/clubs/threadTools",
-	"jsCookie",
 ], function (
 	memberList,
 	iconSelect,
@@ -33,18 +32,18 @@ define("forum/clubs/details", [
 	alerts,
 	utils,
 	threadTools,
-	jsCookie,
 ) {
 	const Details = {};
 	let groupName;
 	let userWalletInfo = {};
 
 	let token = "";
-	let clubName = $("#buyBtn").data("name");
+	let clubName = $("#clubs-container").data("name");
 	let clubPrice = 0;
 	let userId = "";
 
 	Details.init = function () {
+		clubName = $("#clubs-container").data("name");
 		$("#buyBtn").on("click", Details.showDialogToBuy);
 		$("#myModal").on("show.bs.modal", function () {
 			$("#myModal .modal-footer .btn").on("click", function (e) {
@@ -69,6 +68,9 @@ define("forum/clubs/details", [
 		Details.buyActiveCode()
 			.then((res) => {
 				clubPrice = res;
+				if($(".club-price")) {
+					$(".club-price").text(clubPrice)
+				}
 			})
 			.catch((err) => {});
 
