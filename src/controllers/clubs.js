@@ -37,7 +37,6 @@ clubsController.list = async function (req, res) {
 		const tagContent = isOwner ? 'Owner' : (isMember ? 'Join' : '')
 		const cid = groupData[index].memberPostCidsArray?.[0] || ''
 		const obj = Object.assign({isMember, isOwner, tagContent, cid}, groupData[index])
-		console.log('push明细', obj)
 		return obj
 	}))
 	
@@ -141,7 +140,6 @@ const getTempQuery = async function({ cid, uid, req }) {
 }
 
 clubsController.details = async function (req, res, next) {
-	console.log("测试--------------------")
 	let slug = req.params.slug
 	const lowercaseSlug = slugify(slug).toLowerCase();
 	if (slug !== lowercaseSlug) {
@@ -187,7 +185,7 @@ clubsController.details = async function (req, res, next) {
 	}
 	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
 	const ownerUids = await clubs.getOwners(clubName);
-	groupData.hasOwner = ownerUids.length > 0;
+	groupData.hasOwner = ownerUids && ownerUids.length > 0;
 	// const ownerUids = await clubs.getOwners(clubName);
 	// groupData.ownerUids = ownerUids;
 	groupData.showTopicTools = groupData.isOwner;
@@ -214,7 +212,6 @@ clubsController.details = async function (req, res, next) {
 	const [userSettings] = await Promise.all([
 		user.getSettings(req.uid)
 	]);
-	console.log("groupData.memberPostCidsArray:",groupData.memberPostCidsArray)
     let query = {
 		uid: req.uid,
 		cid: groupData.memberPostCidsArray[0],
@@ -224,10 +221,8 @@ clubsController.details = async function (req, res, next) {
 		settings: userSettings
 	}
 
-	console.log("query:",query)
 	//const topicList = await categories.getCategoryById(query)
 	const topicList = await categories.getCategoryById(query)
-	console.log("topicList:",topicList)
 	const fullTopics = await Promise.all(topicList.topics.map(async (topicData) => {
 		// 参考controller/topic
 		const set = `tid:${topicData.tid}:posts:votes` // sort === 'most_votes' ? `tid:${tid}:posts:votes` : `tid:${tid}:posts`;
