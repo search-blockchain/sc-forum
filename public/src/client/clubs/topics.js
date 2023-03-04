@@ -37,7 +37,7 @@ define("forum/clubs/details", [
 	const origin = window.location.origin
 	const isDev = origin.indexOf('search.club') == -1
 	const API_URL = isDev ? 'http://192.168.1.107:7979' : 'https://www.search.club/userserver';
-	let APP_URL = API_URL;
+	let APP_URL = 'https://www.search.club';
 	if(origin.indexOf('localhost') != -1) {
 		APP_URL = origin.replace('4567', '3030');
 	}
