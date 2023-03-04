@@ -1,5 +1,6 @@
 {
     "url": "http://192.168.1.107:4567/forum",
+    "app_url": "http://192.168.1.107:3030",
     "secret": "dae867b8-6111-41cc-97ab-cb222b714e21",
     "database": "mongo",
     "mongo": {

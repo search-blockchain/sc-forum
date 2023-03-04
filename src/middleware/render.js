@@ -12,6 +12,7 @@ const utils = require('../utils');
 const helpers = require('./helpers');
 
 const relative_path = nconf.get('relative_path');
+const app_url = nconf.get('app_url');
 
 module.exports = function (middleware) {
 	middleware.processRender = function processRender(req, res, next) {
@@ -30,8 +31,10 @@ module.exports = function (middleware) {
 
 				options.loggedIn = req.uid > 0;
 				options.relative_path = relative_path;
+				options.app_url = app_url;
 				options.template = { name: template, [template]: true };
 				options.url = (req.baseUrl + req.path.replace(/^\/api/, ''));
+				options.full_url = app_url + options.url;
 				options.bodyClass = helpers.buildBodyClass(req, res, options);
 
 				if (req.loggedIn) {
