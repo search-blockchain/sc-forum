@@ -33,12 +33,21 @@ define("forum/clubs/details", [
 	utils,
 	threadTools
 ) {
+	// let HOST_URL = window.location.origin;
+	const origin = window.location.origin
+	const isDev = origin.indexOf('search.club') == -1
+	const API_URL = isDev ? 'http://192.168.1.107:7979' : 'https://www.search.club/userserver';
+	let APP_URL = API_URL;
+	if(origin.indexOf('localhost') != -1) {
+		APP_URL = origin.replace('4567', '3030');
+	}
+	
 	const Details = {};
 	let groupName;
 	let userWalletInfo = {};
 
 	let token = "";
-	let clubName = $("#buyBtn").data("name");
+	let clubName = ajaxify.data.group.slug;
 	let clubPrice = 0;
 	let userId = "";
 
@@ -77,6 +86,7 @@ define("forum/clubs/details", [
 		// 	$("#myModal").remove();
 		// });
 
+		console.log('ajaxify.data.group', ajaxify.data.group)
 		detailsPage.on("click", "[data-action]", function () {
 			const btnEl = $(this);
 			const userRow = btnEl.parents("[data-uid]");
@@ -165,13 +175,13 @@ define("forum/clubs/details", [
 		return new Promise(function (resolve, reject) {
 			const objFromApp = utils.getCookie("forumdata");
 			if (!objFromApp) {
-				alerts.error("未登录");
+				// alerts.error("未登录");
 				return reject("无关联的appuser数据");
 			}
 			userId = objFromApp.userId;
 			token = objFromApp.token;
 			$.ajax(
-				"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo",
+				`${API_URL}/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo`,
 				{
 					method: "POST",
 					dataType: "json",
@@ -210,7 +220,7 @@ define("forum/clubs/details", [
 		console.log(clubName);
 		return new Promise(function (resolve, reject) {
 			$.ajax({
-				url: "https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWallet/buyActiveCode",
+				url: `${API_URL}/xcloud-boss-provider-assets/assets/userWallet/buyActiveCode`,
 				method: "POST",
 				dataType: "json",
 				contentType: "application/json;charset=UTF-8",
@@ -242,7 +252,11 @@ define("forum/clubs/details", [
 
 	Details.showDialogToBuy = function (_e) {
 		console.log("购买这个俱乐部", userWalletInfo, clubName, userId);
-		if (!userId && !token) return alerts.error("未登录");
+		if (!userId && !token) {
+			window.location.href = `${APP_URL}/api/auth/signin?callbackUrl=${config.relative_path}/clubs/${ajaxify.data.group.slug}`;
+			return 
+			// return alerts.error("未登录");
+		}
 		if (!userWalletInfo.avaliableBalance) return alerts.error("余额为0");
 		// if(!clubPrice) return alerts.error("获取不到俱乐部价格");
 		if (Number(userWalletInfo.avaliableBalance) > 100) {
@@ -276,7 +290,7 @@ define("forum/clubs/details", [
 					'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
 				);
 				$.ajax(
-					"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWallet/buyPointCard",
+					`${API_URL}/xcloud-boss-provider-assets/assets/userWallet/buyPointCard`,
 					{
 						method: "POST",
 						dataType: "json",
@@ -324,7 +338,7 @@ define("forum/clubs/details", [
 			);
 			$("#goToSearch").on("click", function () {
 				console.log("go to search");
-				window.location.href = "https://www.search.club/";
+				window.location.href = APP_URL;
 			});
 		}
 		$("#myModal").modal({
