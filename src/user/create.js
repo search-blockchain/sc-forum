@@ -19,7 +19,6 @@ module.exports = function (User) {
 		if (data.email !== undefined) {
 			data.email = String(data.email).trim();
 		}
-
 		await User.isDataValid(data);
 
 		await lock(data.username, '[[error:username-taken]]');
@@ -44,7 +43,7 @@ module.exports = function (User) {
 	async function create(data) {
 		console.log('create ---->>>> ', data);
 		const timestamp = data.timestamp || Date.now();
-		const autoConfirm = Boolean(data.autoconfirm);
+		const autoConfirm = Boolean(data.autoConfirm);
 		let userData = {
 			username: data.username,
 			userslug: data.userslug,
@@ -109,13 +108,21 @@ module.exports = function (User) {
 		if (userData.email && isFirstUser) {
 			await User.email.confirmByUid(userData.uid);
 		}
-		if (userData.email && userData.uid > 1 && !autoConfirm) {
-			await User.email.sendValidationEmail(userData.uid, {
-				email: userData.email,
-				template: 'welcome',
-				subject: `[[email:welcome-to, ${meta.config.title || meta.config.browserTitle || 'NodeBB'}]]`,
-			}).catch(err => winston.error(`------[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
+
+		if (userData.email && userData.uid > 1) {
+			if(autoConfirm) {
+				await User.setUserField(userData.uid, 'email', userData.email);
+				await User.email.confirmByUid(uid);
+			} else {
+				await User.email.sendValidationEmail(userData.uid, {
+					email: userData.email,
+					template: 'welcome',
+					subject: `[[email:welcome-to, ${meta.config.title || meta.config.browserTitle || 'NodeBB'}]]`,
+				}).catch(err => winston.error(`------[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
+			}
 		}
+		// TODO gplusid
+		
 		if (userNameChanged) {
 			await User.notifications.sendNameChangeNotification(userData.uid, userData.username);
 		}
