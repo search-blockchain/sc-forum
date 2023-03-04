@@ -10,7 +10,7 @@ const plugins = require('../plugins');
 const groups = require('../groups');
 const meta = require('../meta');
 const analytics = require('../analytics');
-{ username: handle, email: !autoConfirm ? email : undefined }
+
 module.exports = function (User) {
 	User.create = async function (data) {
 		console.log('----debug==> ', data);
@@ -19,7 +19,6 @@ module.exports = function (User) {
 		if (data.email !== undefined) {
 			data.email = String(data.email).trim();
 		}
-		{ username: handle, email: !autoConfirm ? email : undefined }
 		await User.isDataValid(data);
 
 		await lock(data.username, '[[error:username-taken]]');
