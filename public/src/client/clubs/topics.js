@@ -37,6 +37,7 @@ define("forum/clubs/details", [
 	const origin = window.location.origin
 	const isDev = origin.indexOf('search.club') == -1
 	const API_URL = isDev ? 'http://192.168.1.107:7979' : 'https://www.search.club/userserver';
+	const FORUM_URL = origin;
 	let APP_URL = 'https://www.search.club';
 	if(origin.indexOf('localhost') != -1) {
 		APP_URL = origin.replace('4567', '3030');
@@ -253,7 +254,7 @@ define("forum/clubs/details", [
 	Details.showDialogToBuy = function (_e) {
 		console.log("购买这个俱乐部", userWalletInfo, clubName, userId);
 		if (!userId && !token) {
-			window.location.href = `${APP_URL}/api/auth/signin?callbackUrl=${config.relative_path}/clubs/${ajaxify.data.group.slug}`;
+			window.location.href = `${APP_URL}/api/auth/signin?callbackUrl=${FORUM_URL}${config.relative_path}/clubs/${ajaxify.data.group.slug}`;
 			return 
 			// return alerts.error("未登录");
 		}
