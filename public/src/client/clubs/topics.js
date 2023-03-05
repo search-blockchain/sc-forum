@@ -41,23 +41,22 @@ define("forum/clubs/details", [
 	hooks,
 	sort
 ) {
+	const jsCookie = require('js-cookie');
 	// let HOST_URL = window.location.origin;
 	const origin = window.location.origin;
-	// const isDev = origin.indexOf('search.club') == -1;
-	const isDev = false;
+	const isDev = origin.indexOf('search.club') === -1;
 	const API_URL = isDev ? 'http://192.168.1.107:7979' : 'https://www.search.club/userserver';
 	const FORUM_URL = origin;
 	let APP_URL = 'https://www.search.club';
-	if(origin.indexOf('localhost') != -1) {
+	if (origin.indexOf('localhost') !== -1) {
 		APP_URL = origin.replace('4567', '3030');
 	}
-	
 	const Details = {};
 	let groupName;
 	let userWalletInfo = {};
 
 	let token = "";
-	let clubName = ajaxify.data.group.slug;
+	const clubName = ajaxify.data.group.slug;
 	let clubPrice = 0;
 	let userId = "";
 
@@ -73,23 +72,60 @@ define("forum/clubs/details", [
 
 		$("#buyBtn").on("click", Details.showDialogToBuy);
 		$("#myModal").on("show.bs.modal", function () {
-			$("#myModal .modal-footer .btn").on("click", function (e) {
+			$("#myModal .modal-footer .btn").on("click", function () {
 				console.log("button pressed");
 				// $("#myModal").modal("hide");
 			});
 		});
-
+		
+		try {
+			const rewardCookie = jsCookie.get(`minereward:${ajaxify.data.cid}`);
+			let reward = 0;
+			let numRW = 0;
+			const search = location.search;
+			if (ajaxify.data.loggedIn && rewardCookie && search && search.includes('?rw=')) {
+				const rw = search.replace('?rw=', '');
+				if (rw) {
+					numRW = window.atob(decodeURIComponent(rw));
+				}
+				reward = window.atob(rewardCookie);
+				console.log('lucky::: ', ajaxify.data.lucky, ajaxify.data.cid, rewardCookie, reward, numRW);
+				const innerDomain = isDev ? 'localhost:3030' : 'search.club';
+				if (reward && reward === numRW && document.referrer && document.referrer.includes(innerDomain)) {
+					console.log('中奖', $("#myModal1"));
+					$("#myModal1").modal({
+						backdrop: true,
+						keyboard: true,
+						show: true,
+					});
+					$("#myModal1").on("show.bs.modal", function () {
+						$("#myModal1 .ok-btn").on("click", function (e) {
+							console.log("button pressed");
+						});
+					});
+					$("#myModal1").on("click", function (e) {
+						jsCookie.remove(`minereward:${ajaxify.data.cid}`);
+					});
+				}
+			}
+		} catch(e) {
+			console.warn(e);
+		}
+		
 		Details.getUserWalletInfo()
 			.then((res) => {
 				userWalletInfo = res;
 			})
-			.catch((err) => {});
+			.catch(() => {});
 
 		Details.buyActiveCode()
 			.then((res) => {
 				clubPrice = res;
+				if ($(".club-price")) {
+					$(".club-price").text(clubPrice);
+				}
 			})
-			.catch((err) => {});
+			.catch(() => {});
 
 		// TODO 7需改为动态获取tid
 		// clubs/threadTools.js中已有示例
@@ -253,7 +289,7 @@ define("forum/clubs/details", [
 				success: function (res) {
 					console.log("buyActiveCode", res);
 					if (res.data && +res.code === 200) {
-						resolve(res.data.amount)
+						resolve(res.data.amount);
 					} else {
 						alerts.error(res.message || "get club price failed");
 						reject(res.message || "get club price failed");
@@ -268,22 +304,22 @@ define("forum/clubs/details", [
 		});
 	};
 
-	Details.showDialogToBuy = function (_e) {
+	Details.showDialogToBuy = function () {
 		console.log("购买这个俱乐部", userWalletInfo, clubName, userId);
 		if (!userId && !token) {
 			window.location.href = `${APP_URL}/api/auth/signin?callbackUrl=${FORUM_URL}${config.relative_path}/clubs/${ajaxify.data.group.slug}`;
-			return 
+			return;
 			// return alerts.error("未登录");
 		}
 		if (!userWalletInfo.avaliableBalance) return alerts.error("余额为0");
 		// if(!clubPrice) return alerts.error("获取不到俱乐部价格");
 		if (Number(userWalletInfo.avaliableBalance) > 100) {
 			Details.buyActiveCode()
-			.then((res) => {
-				clubPrice = res;
-				$("#clubPrice").text(clubPrice)
-			})
-			.catch((err) => {});
+				.then((res) => {
+					clubPrice = res;
+					$("#clubPrice").text(clubPrice);
+				})
+				.catch(() => {});
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
 				'<button type="button" class="btn btn-primary" id="pay">Pay</button>'
@@ -327,6 +363,7 @@ define("forum/clubs/details", [
 							$("#myModal").modal("hide");
 							if (res.data && +res.code === 200) {
 								alerts.success("buy successfully");
+								window.location.href = `${APP_URL}/forum/clubs/${clubName}`;
 							} else {
 								alerts.error(res.message || "pay failed");
 							}
@@ -561,7 +598,7 @@ define("forum/clubs/details", [
 				onSelect: function (selectedCategory) {
 					let cids = ($("#memberPostCids").val() || "")
 						.split(",")
-						.map((cid) => parseInt(cid, 10));
+						.map(cid => parseInt(cid, 10));
 					cids.push(selectedCategory.cid);
 					cids = cids.filter(
 						(cid, index, array) => array.indexOf(cid) === index
