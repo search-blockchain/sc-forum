@@ -49,95 +49,6 @@ clubsController.list = async function (req, res) {
 	});
 };
 
-const getTempQuery = async function({ cid, uid, req }) {
-	let query = {
-		uid,
-		cid,
-		start: 0,
-		stop: 19,
-		sort: req.params.sort || defaultCategoriesSort,
-		settings: {
-			acpLang: 'zh-CN',
-			bootswatchSkin: '',
-			categoryTopicSort: 'most_posts',
-			categoryWatchState: 'watching',
-			dailyDigestFreq: 'off',
-			followTopicsOnCreate: true,
-			followTopicsOnReply: true,
-			homePageRoute: '',
-			openOutgoingLinksInNewTab: false,
-			postsPerPage: 20,
-			restrictChat: true,
-			scrollToMyPost: true,
-			showemail: false,
-			showfullname: false,
-			topicPostSort: 'newest_to_oldest',
-			topicSearchEnabled: true,
-			topicsPerPage: 20,
-			updateUrlWithPostIndex: true,
-			upvoteNotifFreq: 'all',
-			usePagination: false,
-			userLang: 'zh-CN',
-			themeMaterialSkin: null,
-			uid: 1,
-			notificationType_upvote: 'notification',
-			'notificationType_new-topic': 'notification',
-			'notificationType_new-reply': 'notification',
-			'notificationType_post-edit': 'notification',
-			notificationType_follow: 'notification',
-			'notificationType_new-chat': 'notification',
-			'notificationType_new-group-chat': 'notification',
-			'notificationType_group-invite': 'notification',
-			'notificationType_group-leave': 'notification',
-			'notificationType_group-request-membership': 'notification',
-			notificationType_mention: 'notification',
-			'notificationType_new-register': 'notification',
-			'notificationType_post-queue': 'notification',
-			'notificationType_new-post-flag': 'notification',
-			'notificationType_new-user-flag': 'notification'
-		},
-		query: {},
-		tag: undefined,
-		// targetUid: 0,
-		category: {
-			bgColor: '#fda34b',
-			cid: 1,
-			class: 'col-md-3 col-xs-6',
-			color: '#ffffff',
-			description: 'Announcements regarding our community',
-			descriptionParsed: '<p>Announcements regarding our community</p>\n',
-			disabled: 0,
-			icon: 'fa-bullhorn',
-			imageClass: 'cover',
-			isSection: 0,
-			link: '',
-			name: 'Announcements',
-			numRecentReplies: 1,
-			order: 1,
-			parentCid: 0,
-			post_count: 13,
-			slug: '1/announcements',
-			subCategoriesPerPage: 10,
-			topic_count: 8,
-			minTags: 0,
-			maxTags: 5,
-			postQueue: 0,
-			totalPostCount: 13,
-			totalTopicCount: 8,
-			tagWhitelist: [],
-			'unread-class': ''
-		}
-	}
-	// const [categoryFields, userPrivileges, userSettings, rssToken] = await Promise.all([
-	// 	categories.getCategoryFields(cid, ['slug', 'disabled', 'link']),
-	// 	privileges.categories.get(cid, req.uid),
-	// 	user.getSettings(req.uid),
-	// 	user.auth.getFeedToken(req.uid),
-	// ]);
-	const userSettings = await user.getSettings(req.uid);
-	query.settings = userSettings
-	return query
-}
 
 clubsController.details = async function (req, res, next) {
 	let slug = req.params.slug
@@ -229,7 +140,7 @@ clubsController.details = async function (req, res, next) {
 		cid,
 		start: req.start || 0,
 		stop: req.stop || 10,
-		sort: req.sort || userSettings.categoryTopicSort,
+		sort: req.query.sort || req.body.sort || userSettings.clubTopicSort,
 		settings: userSettings
 	}
 

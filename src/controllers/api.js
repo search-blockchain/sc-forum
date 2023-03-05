@@ -64,6 +64,7 @@ apiController.loadConfig = async function (req) {
 		'cache-buster': meta.config['cache-buster'] || '',
 		topicPostSort: meta.config.topicPostSort || 'oldest_to_newest',
 		categoryTopicSort: meta.config.categoryTopicSort || 'newest_to_oldest',
+		clubTopicSort: meta.config.clubTopicSort || 'most_luckys',
 		csrf_token: req.uid >= 0 && req.csrfToken && req.csrfToken(),
 		searchEnabled: plugins.hooks.hasListeners('filter:search.query'),
 		searchDefaultInQuick: meta.config.searchDefaultInQuick || 'titles',
