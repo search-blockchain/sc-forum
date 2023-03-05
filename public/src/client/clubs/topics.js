@@ -61,36 +61,40 @@ define("forum/clubs/details", [
 				// $("#myModal").modal("hide");
 			});
 		});
-		
-		const rewardCookie = jsCookie.get(`minereward:${ajaxify.data.cid}`);
-		let reward = 0;
-		let numRW = 0;
-		const search = location.search;
-		if (rewardCookie && search && search.includes('?rw=')) {
-			const rw = search.replace('?rw=', '');
-			if (rw) {
-				numRW = window.atob(decodeURIComponent(rw));
-			}
-			reward = window.atob(rewardCookie);
-			console.log('lucky::: ', ajaxify.data.lucky, ajaxify.data.cid, rewardCookie, reward, numRW);
-			const innerDomain = isDev ? 'localhost:3030' : 'search.club';
-			if (reward && reward === numRW && document.referrer && document.referrer.includes(innerDomain)) {
-				console.log('中奖', $("#myModal1"));
-				$("#myModal1").modal({
-					backdrop: true,
-					keyboard: true,
-					show: true,
-				});
-				$("#myModal1").on("show.bs.modal", function () {
-					$("#myModal1 .ok-btn").on("click", function (e) {
-						console.log("button pressed");
+		try {
+			const rewardCookie = jsCookie.get(`minereward:${ajaxify.data.cid}`);
+			let reward = 0;
+			let numRW = 0;
+			const search = location.search;
+			if (ajaxify.data.loggedIn && rewardCookie && search && search.includes('?rw=')) {
+				const rw = search.replace('?rw=', '');
+				if (rw) {
+					numRW = window.atob(decodeURIComponent(rw));
+				}
+				reward = window.atob(rewardCookie);
+				console.log('lucky::: ', ajaxify.data.lucky, ajaxify.data.cid, rewardCookie, reward, numRW);
+				const innerDomain = isDev ? 'localhost:3030' : 'search.club';
+				if (reward && reward === numRW && document.referrer && document.referrer.includes(innerDomain)) {
+					console.log('中奖', $("#myModal1"));
+					$("#myModal1").modal({
+						backdrop: true,
+						keyboard: true,
+						show: true,
 					});
-				});
-				$("#myModal1").on("click", function (e) {
-					jsCookie.remove(`minereward:${ajaxify.data.cid}`);
-				});
+					$("#myModal1").on("show.bs.modal", function () {
+						$("#myModal1 .ok-btn").on("click", function (e) {
+							console.log("button pressed");
+						});
+					});
+					$("#myModal1").on("click", function (e) {
+						jsCookie.remove(`minereward:${ajaxify.data.cid}`);
+					});
+				}
 			}
+		} catch(e) {
+			console.warn(e);
 		}
+
 
 
 		const detailsPage = components.get("clubs/container");
