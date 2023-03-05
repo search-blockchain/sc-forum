@@ -40,16 +40,15 @@ define("forum/clubs/details", [
 	const API_URL = isDev ? 'http://192.168.1.107:7979' : 'https://www.search.club/userserver';
 	const FORUM_URL = origin;
 	let APP_URL = 'https://www.search.club';
-	if(origin.indexOf('localhost') != -1) {
+	if (origin.indexOf('localhost') !== -1) {
 		APP_URL = origin.replace('4567', '3030');
 	}
-	
 	const Details = {};
 	let groupName;
 	let userWalletInfo = {};
 
 	let token = "";
-	let clubName = ajaxify.data.group.slug;
+	const clubName = ajaxify.data.group.slug;
 	let clubPrice = 0;
 	let userId = "";
 
@@ -57,7 +56,7 @@ define("forum/clubs/details", [
 		// clubName = $("#clubs-container").data("name");
 		$("#buyBtn").on("click", Details.showDialogToBuy);
 		$("#myModal").on("show.bs.modal", function () {
-			$("#myModal .modal-footer .btn").on("click", function (e) {
+			$("#myModal .modal-footer .btn").on("click", function () {
 				console.log("button pressed");
 				// $("#myModal").modal("hide");
 			});
@@ -100,16 +99,16 @@ define("forum/clubs/details", [
 			.then((res) => {
 				userWalletInfo = res;
 			})
-			.catch((err) => {});
+			.catch(() => {});
 
 		Details.buyActiveCode()
 			.then((res) => {
 				clubPrice = res;
-				if($(".club-price")) {
-					$(".club-price").text(clubPrice)
+				if ($(".club-price")) {
+					$(".club-price").text(clubPrice);
 				}
 			})
-			.catch((err) => {});
+			.catch(() => {});
 
 		// TODO 7需改为动态获取tid
 		// clubs/threadTools.js中已有示例
@@ -124,7 +123,7 @@ define("forum/clubs/details", [
 		// 	$("#myModal").remove();
 		// });
 
-		console.log('ajaxify.data.group', ajaxify.data.group)
+		console.log('ajaxify.data.group', ajaxify.data.group);
 		detailsPage.on("click", "[data-action]", function () {
 			const btnEl = $(this);
 			const userRow = btnEl.parents("[data-uid]");
@@ -273,7 +272,7 @@ define("forum/clubs/details", [
 				success: function (res) {
 					console.log("buyActiveCode", res);
 					if (res.data && +res.code === 200) {
-						resolve(res.data.amount)
+						resolve(res.data.amount);
 					} else {
 						alerts.error(res.message || "get club price failed");
 						reject(res.message || "get club price failed");
@@ -288,22 +287,22 @@ define("forum/clubs/details", [
 		});
 	};
 
-	Details.showDialogToBuy = function (_e) {
+	Details.showDialogToBuy = function () {
 		console.log("购买这个俱乐部", userWalletInfo, clubName, userId);
 		if (!userId && !token) {
 			window.location.href = `${APP_URL}/api/auth/signin?callbackUrl=${FORUM_URL}${config.relative_path}/clubs/${ajaxify.data.group.slug}`;
-			return 
+			return;
 			// return alerts.error("未登录");
 		}
 		if (!userWalletInfo.avaliableBalance) return alerts.error("余额为0");
 		// if(!clubPrice) return alerts.error("获取不到俱乐部价格");
 		if (Number(userWalletInfo.avaliableBalance) > 100) {
 			Details.buyActiveCode()
-			.then((res) => {
-				clubPrice = res;
-				$("#clubPrice").text(clubPrice)
-			})
-			.catch((err) => {});
+				.then((res) => {
+					clubPrice = res;
+					$("#clubPrice").text(clubPrice);
+				})
+				.catch(() => {});
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
 				'<button type="button" class="btn btn-primary" id="pay">Pay</button>'
@@ -347,7 +346,7 @@ define("forum/clubs/details", [
 							$("#myModal").modal("hide");
 							if (res.data && +res.code === 200) {
 								alerts.success("buy successfully");
-								window.location.href = `https://www.search.club/forum/clubs/${clubName}`;
+								window.location.href = `${APP_URL}/forum/clubs/${clubName}`;
 							} else {
 								alerts.error(res.message || "pay failed");
 							}
@@ -440,7 +439,7 @@ define("forum/clubs/details", [
 				onSelect: function (selectedCategory) {
 					let cids = ($("#memberPostCids").val() || "")
 						.split(",")
-						.map((cid) => parseInt(cid, 10));
+						.map(cid => parseInt(cid, 10));
 					cids.push(selectedCategory.cid);
 					cids = cids.filter(
 						(cid, index, array) => array.indexOf(cid) === index
