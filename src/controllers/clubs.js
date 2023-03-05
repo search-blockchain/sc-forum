@@ -183,6 +183,7 @@ clubsController.details = async function (req, res, next) {
 	if (!groupData) {
 		return next();
 	}
+
 	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
 	const ownerUids = await clubs.getOwners(clubName);
 	groupData.hasOwner = ownerUids && ownerUids.length > 0;
@@ -190,9 +191,9 @@ clubsController.details = async function (req, res, next) {
 	// groupData.ownerUids = ownerUids;
 	groupData.showTopicTools = groupData.isOwner;
 	groupData.view_thread_tools = groupData.isOwner;
-	
-	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
-		console.warn('未关联Cid', req.uid)
+
+	const renderEmpty = () => {
+		console.warn('未关联Cid或Cid不存在', req.uid)
 		res.render('clubs/topics', {
 			currentUID: req.uid,
 			title: `[[pages:clubs, ${groupData.displayName}]]`,
@@ -205,24 +206,38 @@ clubsController.details = async function (req, res, next) {
 			breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
 			// ...fullTopics[0]
 		});
-		return
+	}
+	
+	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
+		return renderEmpty();
 	}
 
 	//let query = await getTempQuery({ cid: groupData.memberPostCidsArray[0], uid: req.uid, req})
-	const [userSettings] = await Promise.all([
-		user.getSettings(req.uid)
+	const cid = groupData.memberPostCidsArray[0]; // req.params.category_id;
+
+	const [userSettings, userPrivileges] = await Promise.all([
+		user.getSettings(req.uid),
+		privileges.categories.get(cid, req.uid),
 	]);
-    let query = {
+
+	if (!userPrivileges.read) {
+		return helpers.notAllowed(req, res);
+	}
+
+	let query = {
 		uid: req.uid,
-		cid: groupData.memberPostCidsArray[0],
+		cid,
 		start: req.start || 0,
 		stop: req.stop || 10,
 		sort: req.sort || userSettings.categoryTopicSort,
 		settings: userSettings
 	}
 
-	//const topicList = await categories.getCategoryById(query)
 	const topicList = await categories.getCategoryById(query)
+	if(!topicList) {
+		return renderEmpty();
+	}
+	
 	const fullTopics = await Promise.all(topicList.topics.map(async (topicData) => {
 		// 参考controller/topic
 		const set = `tid:${topicData.tid}:posts:votes` // sort === 'most_votes' ? `tid:${tid}:posts:votes` : `tid:${tid}:posts`;
@@ -241,6 +256,8 @@ clubsController.details = async function (req, res, next) {
 		topics: fullTopics,
 		isAdmin: isAdmin,
 		isGlobalMod: isGlobalMod,
+		privileges: userPrivileges,
+		showTopicTools: userPrivileges.editable,
 		allowPrivateGroups: meta.config.allowPrivateGroups,
 		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
 		...fullTopics[0]
