@@ -31,11 +31,12 @@ define("forum/clubs/details", [
 	bootbox,
 	alerts,
 	utils,
-	threadTools,
+	threadTools
 ) {
+	const jsCookie = require('js-cookie');
 	// let HOST_URL = window.location.origin;
-	const origin = window.location.origin
-	const isDev = origin.indexOf('search.club') == -1
+	const origin = window.location.origin;
+	const isDev = origin.indexOf('search.club') === -1;
 	const API_URL = isDev ? 'http://192.168.1.107:7979' : 'https://www.search.club/userserver';
 	const FORUM_URL = origin;
 	let APP_URL = 'https://www.search.club';
@@ -61,12 +62,38 @@ define("forum/clubs/details", [
 				// $("#myModal").modal("hide");
 			});
 		});
-		// const forumCookieFromApp = jsCookie.get('');
-		// $("#myModal1").modal({
-		// 	backdrop: true,
-		// 	keyboard: true,
-		// 	show: true,
-		// });
+		
+		const rewardCookie = jsCookie.get(`minereward:${ajaxify.data.cid}`);
+		let reward = 0;
+		let numRW = 0;
+		const search = location.search;
+		if (rewardCookie && search && search.includes('?rw=')) {
+			const rw = search.replace('?rw=', '');
+			if (rw) {
+				numRW = window.atob(decodeURIComponent(rw));
+			}
+			reward = window.atob(rewardCookie);
+			console.log('lucky::: ', ajaxify.data.lucky, ajaxify.data.cid, rewardCookie, reward, numRW);
+			const innerDomain = isDev ? 'localhost:3030' : 'search.club';
+			if (reward && reward === numRW && document.referrer && document.referrer.includes(innerDomain)) {
+				console.log('中奖', $("#myModal1"));
+				$("#myModal1").modal({
+					backdrop: true,
+					keyboard: true,
+					show: true,
+				});
+				$("#myModal1").on("show.bs.modal", function () {
+					$("#myModal1 .ok-btn").on("click", function (e) {
+						console.log("button pressed");
+					});
+				});
+				$("#myModal1").on("click", function (e) {
+					jsCookie.remove(`minereward:${ajaxify.data.cid}`);
+				});
+			}
+		}
+
+
 		const detailsPage = components.get("clubs/container");
 
 		Details.getUserWalletInfo()
