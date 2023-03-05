@@ -52,7 +52,10 @@ module.exports = function (User) {
 			lastonline: timestamp,
 			status: 'online',
 		};
-		['picture', 'fullname', 'location', 'birthday'].forEach((field) => {
+		if(data.gplusid) {
+			userData.gplusid = data.gplusid;
+		}
+		['picture', 'fullname', 'location', 'birthday', 'gplusid'].forEach((field) => {
 			if (data[field]) {
 				userData[field] = data[field];
 			}
@@ -79,6 +82,9 @@ module.exports = function (User) {
 		userData.uid = uid;
 
 		await db.setObject(`user:${uid}`, userData);
+		if(userData.gplusid) {
+			await db.setObjectField('gplusid:uid', userData.gplusid, userData.uid);
+		}
 
 		const bulkAdd = [
 			['username:uid', userData.uid, userData.username],
@@ -121,7 +127,6 @@ module.exports = function (User) {
 				}).catch(err => winston.error(`------[user.create] Validation email failed to send\n[emailer.send] ${err.stack}`));
 			}
 		}
-		// TODO gplusid
 		
 		if (userNameChanged) {
 			await User.notifications.sendNameChangeNotification(userData.uid, userData.username);
