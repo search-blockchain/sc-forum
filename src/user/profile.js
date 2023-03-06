@@ -309,9 +309,12 @@ module.exports = function (User) {
 		if (!isAdmin && !isSelf) {
 			throw new Error('[[user:change_password_error_privileges]]');
 		}
-
+console.log("密码测试:",data)
+console.log("isSelf:",isSelf)
+console.log("hasPassword:",hasPassword)
 		if (isSelf && hasPassword) {
 			const correct = await User.isPasswordCorrect(data.uid, data.currentPassword, data.ip);
+			console.log("correct:",correct)
 			if (!correct) {
 				throw new Error('[[user:change_password_error_wrong_current]]');
 			}

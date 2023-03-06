@@ -58,6 +58,7 @@ define("forum/clubs/details", [
 	let token = "";
 	const clubName = ajaxify.data.group.slug;
 	let clubPrice = 0;
+	let basicScore = 0;
 	let userId = "";
 
 	$(window).on('action:ajaxify.start', function (ev, data) {
@@ -120,9 +121,13 @@ define("forum/clubs/details", [
 
 		Details.buyActiveCode()
 			.then((res) => {
-				clubPrice = res;
+				clubPrice = res.amount;
+				basicScore = res.basicScore;
 				if ($(".club-price")) {
 					$(".club-price").text(clubPrice);
+				}
+				if($(".basic-score")) {
+					$(".basic-score").text(basicScore);
 				}
 			})
 			.catch(() => {});
@@ -289,7 +294,7 @@ define("forum/clubs/details", [
 				success: function (res) {
 					console.log("buyActiveCode", res);
 					if (res.data && +res.code === 200) {
-						resolve(res.data.amount);
+						resolve(res.data);
 					} else {
 						alerts.error(res.message || "get club price failed");
 						reject(res.message || "get club price failed");
@@ -311,12 +316,12 @@ define("forum/clubs/details", [
 			return;
 			// return alerts.error("未登录");
 		}
-		if (!userWalletInfo.avaliableBalance) return alerts.error("余额为0");
+		if (!userWalletInfo.avaliableBalance) return alerts.error("balance is 0");
 		// if(!clubPrice) return alerts.error("获取不到俱乐部价格");
-		if (Number(userWalletInfo.avaliableBalance) > 100) {
+		if (clubPrice && Number(userWalletInfo.avaliableBalance) > clubPrice) {
 			Details.buyActiveCode()
 				.then((res) => {
-					clubPrice = res;
+					clubPrice = res.amount;
 					$("#clubPrice").text(clubPrice);
 				})
 				.catch(() => {});
@@ -363,7 +368,8 @@ define("forum/clubs/details", [
 							$("#myModal").modal("hide");
 							if (res.data && +res.code === 200) {
 								alerts.success("buy successfully");
-								window.location.href = `${APP_URL}/forum/clubs/${clubName}`;
+								// window.location.href = `${APP_URL}/forum/clubs/${clubName}`;
+								ajaxify.refresh();
 							} else {
 								alerts.error(res.message || "pay failed");
 							}
