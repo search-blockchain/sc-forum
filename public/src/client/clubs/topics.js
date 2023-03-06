@@ -18,6 +18,10 @@ define("forum/clubs/details", [
 	"alerts",
 	"utils",
 	"forum/clubs/threadTools",
+	'navigator',
+	'topicList',
+	'hooks',
+	'sort'
 ], function (
 	memberList,
 	iconSelect,
@@ -31,38 +35,97 @@ define("forum/clubs/details", [
 	bootbox,
 	alerts,
 	utils,
-	threadTools
+	threadTools,
+	navigator,
+	topicList,
+	hooks,
+	sort
 ) {
+	const jsCookie = require('js-cookie');
+	// let HOST_URL = window.location.origin;
+	const origin = window.location.origin;
+	const isDev = origin.indexOf('search.club') === -1;
+	const API_URL = isDev ? 'http://192.168.1.107:7979' : 'https://www.search.club/userserver';
+	const FORUM_URL = origin;
+	let APP_URL = 'https://www.search.club';
+	if (origin.indexOf('localhost') !== -1) {
+		APP_URL = origin.replace('4567', '3030');
+	}
 	const Details = {};
 	let groupName;
 	let userWalletInfo = {};
 
 	let token = "";
-	let clubName = $("#buyBtn").data("name");
+	const clubName = ajaxify.data.group.slug;
 	let clubPrice = 0;
 	let userId = "";
 
+	$(window).on('action:ajaxify.start', function (ev, data) {
+		if (!String(data.url).startsWith('category/')) {
+			navigator.disable();
+		}
+	});
+
 	Details.init = function () {
+		initSort();
+		const detailsPage = components.get("clubs/container");
+
 		$("#buyBtn").on("click", Details.showDialogToBuy);
 		$("#myModal").on("show.bs.modal", function () {
-			$("#myModal .modal-footer .btn").on("click", function (e) {
+			$("#myModal .modal-footer .btn").on("click", function () {
 				console.log("button pressed");
 				// $("#myModal").modal("hide");
 			});
 		});
-		const detailsPage = components.get("clubs/container");
-
+		
+		try {
+			const rewardCookie = jsCookie.get(`minereward:${ajaxify.data.cid}`);
+			let reward = 0;
+			let numRW = 0;
+			const search = location.search;
+			if (ajaxify.data.loggedIn && rewardCookie && search && search.includes('?rw=')) {
+				const rw = search.replace('?rw=', '');
+				if (rw) {
+					numRW = window.atob(decodeURIComponent(rw));
+				}
+				reward = window.atob(rewardCookie);
+				console.log('lucky::: ', ajaxify.data.lucky, ajaxify.data.cid, rewardCookie, reward, numRW);
+				const innerDomain = isDev ? 'localhost:3030' : 'search.club';
+				if (reward && reward === numRW && document.referrer && document.referrer.includes(innerDomain)) {
+					console.log('中奖', $("#myModal1"));
+					$("#myModal1").modal({
+						backdrop: true,
+						keyboard: true,
+						show: true,
+					});
+					$("#myModal1").on("show.bs.modal", function () {
+						$("#myModal1 .ok-btn").on("click", function (e) {
+							console.log("button pressed");
+						});
+					});
+					$("#myModal1").on("click", function (e) {
+						jsCookie.remove(`minereward:${ajaxify.data.cid}`);
+					});
+				}
+			}
+		} catch(e) {
+			console.warn(e);
+		}
+		
 		Details.getUserWalletInfo()
 			.then((res) => {
 				userWalletInfo = res;
 			})
-			.catch((err) => {});
+			.catch(() => {});
 
 		Details.buyActiveCode()
 			.then((res) => {
 				clubPrice = res;
+				if ($(".club-price")) {
+					$(".club-price").text(clubPrice);
+				}
 			})
-			.catch((err) => {});
+			.catch(() => {});
 
 		// TODO 7需改为动态获取tid
 		// clubs/threadTools.js中已有示例
@@ -161,17 +224,18 @@ define("forum/clubs/details", [
 			}
 		});
 	};
+	
 	Details.getUserWalletInfo = function () {
 		return new Promise(function (resolve, reject) {
 			const objFromApp = utils.getCookie("forumdata");
 			if (!objFromApp) {
-				alerts.error("未登录");
+				// alerts.error("未登录");
 				return reject("无关联的appuser数据");
 			}
 			userId = objFromApp.userId;
 			token = objFromApp.token;
 			$.ajax(
-				"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo",
+				`${API_URL}/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo`,
 				{
 					method: "POST",
 					dataType: "json",
@@ -206,11 +270,11 @@ define("forum/clubs/details", [
 			);
 		});
 	};
+	
 	Details.buyActiveCode = function () {
-		console.log(clubName);
 		return new Promise(function (resolve, reject) {
 			$.ajax({
-				url: "https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWallet/buyActiveCode",
+				url: `${API_URL}/xcloud-boss-provider-assets/assets/userWallet/buyActiveCode`,
 				method: "POST",
 				dataType: "json",
 				contentType: "application/json;charset=UTF-8",
@@ -225,7 +289,7 @@ define("forum/clubs/details", [
 				success: function (res) {
 					console.log("buyActiveCode", res);
 					if (res.data && +res.code === 200) {
-						resolve(res.data.amount)
+						resolve(res.data.amount);
 					} else {
 						alerts.error(res.message || "get club price failed");
 						reject(res.message || "get club price failed");
@@ -240,18 +304,22 @@ define("forum/clubs/details", [
 		});
 	};
 
-	Details.showDialogToBuy = function (_e) {
+	Details.showDialogToBuy = function () {
 		console.log("购买这个俱乐部", userWalletInfo, clubName, userId);
-		if (!userId && !token) return alerts.error("未登录");
+		if (!userId && !token) {
+			window.location.href = `${APP_URL}/api/auth/signin?callbackUrl=${FORUM_URL}${config.relative_path}/clubs/${ajaxify.data.group.slug}`;
+			return;
+			// return alerts.error("未登录");
+		}
 		if (!userWalletInfo.avaliableBalance) return alerts.error("余额为0");
 		// if(!clubPrice) return alerts.error("获取不到俱乐部价格");
 		if (Number(userWalletInfo.avaliableBalance) > 100) {
 			Details.buyActiveCode()
-			.then((res) => {
-				clubPrice = res;
-				$("#clubPrice").text(clubPrice)
-			})
-			.catch((err) => {});
+				.then((res) => {
+					clubPrice = res;
+					$("#clubPrice").text(clubPrice);
+				})
+				.catch(() => {});
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
 				'<button type="button" class="btn btn-primary" id="pay">Pay</button>'
@@ -276,7 +344,7 @@ define("forum/clubs/details", [
 					'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
 				);
 				$.ajax(
-					"https://www.search.club/userserver/xcloud-boss-provider-assets/assets/userWallet/buyPointCard",
+					`${API_URL}/xcloud-boss-provider-assets/assets/userWallet/buyPointCard`,
 					{
 						method: "POST",
 						dataType: "json",
@@ -295,6 +363,7 @@ define("forum/clubs/details", [
 							$("#myModal").modal("hide");
 							if (res.data && +res.code === 200) {
 								alerts.success("buy successfully");
+								window.location.href = `${APP_URL}/forum/clubs/${clubName}`;
 							} else {
 								alerts.error(res.message || "pay failed");
 							}
@@ -323,8 +392,7 @@ define("forum/clubs/details", [
 				'<div class="content-2">Get more <span class="sct">SCT</span> by searching</div>'
 			);
 			$("#goToSearch").on("click", function () {
-				console.log("go to search");
-				window.location.href = "https://www.search.club/";
+				window.location.href = APP_URL;
 			});
 		}
 		$("#myModal").modal({
@@ -334,6 +402,149 @@ define("forum/clubs/details", [
 		});
 	};
 
+	// ---------------- START /public/src/client/category.js ---------------
+	function initSort() {
+		const cid = ajaxify.data.cid;
+
+		app.enterRoom('club_' + cid);
+
+		// share.addShareHandlers(ajaxify.data.name);
+
+		topicList.init('club', loadTopicsAfter);
+
+		sort.handleSort('clubTopicSort', 'clubs/' + clubName);
+		const clubTopicSort = ajaxify.data.config && ajaxify.data.config.clubTopicSort || 'most_luckys';
+		
+		$('.sort-item')
+			.removeClass('active')
+			.parent()
+			.children(`.${clubTopicSort}`)
+			.addClass('active');
+
+		if (!config.usePagination) {
+			navigator.init('[component="category/topic"]', ajaxify.data.topic_count, Details.toTop, Details.toBottom, Details.navigatorCallback);
+		} else {
+			navigator.disable();
+		}
+
+		handleScrollToTopicIndex();
+
+		// handleIgnoreWatch(cid);
+
+		handleLoadMoreSubcategories();
+
+		// categorySelector.init($('[component="category-selector"]'), {
+		// 	privilege: 'find',
+		// 	parentCid: ajaxify.data.cid,
+		// 	onSelect: function (category) {
+		// 		ajaxify.go('/category/' + category.cid);
+		// 	},
+		// });
+
+		hooks.fire('action:topics.loaded', { topics: ajaxify.data.topics });
+		hooks.fire('action:category.loaded', { cid: ajaxify.data.cid });
+	}
+
+	function handleScrollToTopicIndex() {
+		let topicIndex = ajaxify.data.topicIndex;
+		if (topicIndex && utils.isNumber(topicIndex)) {
+			topicIndex = Math.max(0, parseInt(topicIndex, 10));
+			if (topicIndex && window.location.search.indexOf('page=') === -1) {
+				navigator.scrollToElement($('[component="category/topic"][data-index="' + topicIndex + '"]'), true, 0);
+			}
+		}
+	}
+
+	// function handleIgnoreWatch(cid) {
+	// 	$('[component="category/watching"], [component="category/ignoring"], [component="category/notwatching"]').on('click', function () {
+	// 		const $this = $(this);
+	// 		const state = $this.attr('data-state');
+
+	// 		socket.emit('categories.setWatchState', { cid: cid, state: state }, function (err) {
+	// 			if (err) {
+	// 				return alerts.error(err);
+	// 			}
+
+	// 			$('[component="category/watching/menu"]').toggleClass('hidden', state !== 'watching');
+	// 			$('[component="category/watching/check"]').toggleClass('fa-check', state === 'watching');
+
+	// 			$('[component="category/notwatching/menu"]').toggleClass('hidden', state !== 'notwatching');
+	// 			$('[component="category/notwatching/check"]').toggleClass('fa-check', state === 'notwatching');
+
+	// 			$('[component="category/ignoring/menu"]').toggleClass('hidden', state !== 'ignoring');
+	// 			$('[component="category/ignoring/check"]').toggleClass('fa-check', state === 'ignoring');
+
+	// 			alerts.success('[[category:' + state + '.message]]');
+	// 		});
+	// 	});
+	// }
+
+	function handleLoadMoreSubcategories() {
+		$('[component="category/load-more-subcategories"]').on('click', function () {
+			const btn = $(this);
+			socket.emit('categories.loadMoreSubCategories', {
+				cid: ajaxify.data.cid,
+				start: ajaxify.data.nextSubCategoryStart,
+			}, function (err, data) {
+				if (err) {
+					return alerts.error(err);
+				}
+				btn.toggleClass('hidden', !data.length || data.length < ajaxify.data.subCategoriesPerPage);
+				if (!data.length) {
+					return;
+				}
+				app.parseAndTranslate('category', 'children', { children: data }, function (html) {
+					html.find('.timeago').timeago();
+					$('[component="category/subcategory/container"]').append(html);
+					utils.makeNumbersHumanReadable(html.find('.human-readable-number'));
+					app.createUserTooltips(html);
+					ajaxify.data.nextSubCategoryStart += ajaxify.data.subCategoriesPerPage;
+					ajaxify.data.subCategoriesLeft -= data.length;
+					btn.toggleClass('hidden', ajaxify.data.subCategoriesLeft <= 0)
+						.translateText('[[category:x-more-categories, ' + ajaxify.data.subCategoriesLeft + ']]');
+				});
+			});
+			return false;
+		});
+	}
+
+	Details.toTop = function () {
+		navigator.scrollTop(0);
+	};
+
+	Details.toBottom = function () {
+		socket.emit('categories.getTopicCount', ajaxify.data.cid, function (err, count) {
+			if (err) {
+				return alerts.error(err);
+			}
+
+			navigator.scrollBottom(count - 1);
+		});
+	};
+
+	Details.navigatorCallback = function (topIndex, bottomIndex) {
+		return bottomIndex;
+	};
+
+	function loadTopicsAfter(after, direction, callback) {
+		callback = callback || function () {};
+
+		hooks.fire('action:topics.loading');
+		const params = utils.params();
+		infinitescroll.loadMore('categories.loadMore', {
+			cid: ajaxify.data.cid,
+			after: after,
+			direction: direction,
+			query: params,
+			categoryTopicSort: config.categoryTopicSort,
+		}, function (data, done) {
+			hooks.fire('action:topics.loaded', { topics: data.topics });
+			callback(data, done);
+		});
+	}
+	// ---------------- END /public/src/client/category.js ---------------
+
+	// ---------------- START /public/src/client/groups/details.js ---------------
 	Details.prepareSettings = function () {
 		const settingsFormEl = components.get("groups/settings");
 		const labelColorValueEl = settingsFormEl.find('[name="labelColor"]');
@@ -387,7 +598,7 @@ define("forum/clubs/details", [
 				onSelect: function (selectedCategory) {
 					let cids = ($("#memberPostCids").val() || "")
 						.split(",")
-						.map((cid) => parseInt(cid, 10));
+						.map(cid => parseInt(cid, 10));
 					cids.push(selectedCategory.cid);
 					cids = cids.filter(
 						(cid, index, array) => array.indexOf(cid) === index
@@ -540,6 +751,7 @@ define("forum/clubs/details", [
 			}
 		);
 	}
+	// ---------------- END /public/src/client/groups/details.js ---------------
 
 	return Details;
 });

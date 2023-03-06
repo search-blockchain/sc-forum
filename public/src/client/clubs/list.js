@@ -8,6 +8,13 @@ define('forum/clubs/list', [
 
 	Clubs.init = function () {
 		infinitescroll.init(Clubs.loadMoreClubs);
+		$('#tab1').on('click', function () {
+			console.log('tab1');
+			window.location.href = 'https://www.search.club/';
+		});
+		$('#tab2').on('click', function () {
+			window.location.href = 'https://www.search.club/me';
+		});
 
 		// Club creation
 		$('button[data-action="new"]').on('click', function () {
@@ -21,14 +28,14 @@ define('forum/clubs/list', [
 				}
 			});
 		});
-		const params = utils.params();
+		// const params = utils.params();
 		// $('#search-sort').val(params.sort || 'alpha');
 
 		// Club searching
 		$('#search-text').on('keyup', Clubs.search);
 		$('#search-button').on('click', Clubs.search);
 		// $('#search-sort').on('change', function () {
-		// 	ajaxify.go('clubs?sort=' + $('#search-sort').val());
+		// ajaxify.go('clubs?sort=' + $('#search-sort').val());
 		// });
 	};
 

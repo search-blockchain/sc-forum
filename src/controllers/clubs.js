@@ -37,7 +37,6 @@ clubsController.list = async function (req, res) {
 		const tagContent = isOwner ? 'Owner' : (isMember ? 'Join' : '')
 		const cid = groupData[index].memberPostCidsArray?.[0] || ''
 		const obj = Object.assign({isMember, isOwner, tagContent, cid}, groupData[index])
-		console.log('push明细', obj)
 		return obj
 	}))
 	
@@ -50,98 +49,8 @@ clubsController.list = async function (req, res) {
 	});
 };
 
-const getTempQuery = async function({ cid, uid, req }) {
-	let query = {
-		uid,
-		cid,
-		start: 0,
-		stop: 19,
-		sort: req.params.sort || defaultCategoriesSort,
-		settings: {
-			acpLang: 'zh-CN',
-			bootswatchSkin: '',
-			categoryTopicSort: 'most_posts',
-			categoryWatchState: 'watching',
-			dailyDigestFreq: 'off',
-			followTopicsOnCreate: true,
-			followTopicsOnReply: true,
-			homePageRoute: '',
-			openOutgoingLinksInNewTab: false,
-			postsPerPage: 20,
-			restrictChat: true,
-			scrollToMyPost: true,
-			showemail: false,
-			showfullname: false,
-			topicPostSort: 'newest_to_oldest',
-			topicSearchEnabled: true,
-			topicsPerPage: 20,
-			updateUrlWithPostIndex: true,
-			upvoteNotifFreq: 'all',
-			usePagination: false,
-			userLang: 'zh-CN',
-			themeMaterialSkin: null,
-			uid: 1,
-			notificationType_upvote: 'notification',
-			'notificationType_new-topic': 'notification',
-			'notificationType_new-reply': 'notification',
-			'notificationType_post-edit': 'notification',
-			notificationType_follow: 'notification',
-			'notificationType_new-chat': 'notification',
-			'notificationType_new-group-chat': 'notification',
-			'notificationType_group-invite': 'notification',
-			'notificationType_group-leave': 'notification',
-			'notificationType_group-request-membership': 'notification',
-			notificationType_mention: 'notification',
-			'notificationType_new-register': 'notification',
-			'notificationType_post-queue': 'notification',
-			'notificationType_new-post-flag': 'notification',
-			'notificationType_new-user-flag': 'notification'
-		},
-		query: {},
-		tag: undefined,
-		// targetUid: 0,
-		category: {
-			bgColor: '#fda34b',
-			cid: 1,
-			class: 'col-md-3 col-xs-6',
-			color: '#ffffff',
-			description: 'Announcements regarding our community',
-			descriptionParsed: '<p>Announcements regarding our community</p>\n',
-			disabled: 0,
-			icon: 'fa-bullhorn',
-			imageClass: 'cover',
-			isSection: 0,
-			link: '',
-			name: 'Announcements',
-			numRecentReplies: 1,
-			order: 1,
-			parentCid: 0,
-			post_count: 13,
-			slug: '1/announcements',
-			subCategoriesPerPage: 10,
-			topic_count: 8,
-			minTags: 0,
-			maxTags: 5,
-			postQueue: 0,
-			totalPostCount: 13,
-			totalTopicCount: 8,
-			tagWhitelist: [],
-			'unread-class': ''
-		}
-	}
-	// const [categoryFields, userPrivileges, userSettings, rssToken] = await Promise.all([
-	// 	categories.getCategoryFields(cid, ['slug', 'disabled', 'link']),
-	// 	privileges.categories.get(cid, req.uid),
-	// 	user.getSettings(req.uid),
-	// 	user.auth.getFeedToken(req.uid),
-	// ]);
-	const userSettings = await user.getSettings(req.uid);
-	query.settings = userSettings
-	return query
-}
 
 clubsController.details = async function (req, res, next) {
-	console.log("测试--------------------")
 	let slug = req.params.slug
 	const lowercaseSlug = slugify(slug).toLowerCase();
 	if (slug !== lowercaseSlug) {
@@ -185,16 +94,17 @@ clubsController.details = async function (req, res, next) {
 	if (!groupData) {
 		return next();
 	}
+
 	groupData.isOwner = groupData.isOwner || isAdmin || (isGlobalMod && !groupData.system);
 	const ownerUids = await clubs.getOwners(clubName);
-	groupData.hasOwner = ownerUids.length > 0;
+	groupData.hasOwner = ownerUids && ownerUids.length > 0;
 	// const ownerUids = await clubs.getOwners(clubName);
 	// groupData.ownerUids = ownerUids;
 	groupData.showTopicTools = groupData.isOwner;
 	groupData.view_thread_tools = groupData.isOwner;
-	
-	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
-		console.warn('未关联Cid', req.uid)
+
+	const renderEmpty = () => {
+		console.warn('未关联Cid或Cid不存在', req.uid)
 		res.render('clubs/topics', {
 			currentUID: req.uid,
 			title: `[[pages:clubs, ${groupData.displayName}]]`,
@@ -207,27 +117,38 @@ clubsController.details = async function (req, res, next) {
 			breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
 			// ...fullTopics[0]
 		});
-		return
+	}
+	
+	if(!groupData.memberPostCidsArray || !groupData.memberPostCidsArray.length) {
+		return renderEmpty();
 	}
 
 	//let query = await getTempQuery({ cid: groupData.memberPostCidsArray[0], uid: req.uid, req})
-	const [userSettings] = await Promise.all([
-		user.getSettings(req.uid)
+	const cid = groupData.memberPostCidsArray[0]; // req.params.category_id;
+
+	const [userSettings, userPrivileges] = await Promise.all([
+		user.getSettings(req.uid),
+		privileges.categories.get(cid, req.uid),
 	]);
-	console.log("groupData.memberPostCidsArray:",groupData.memberPostCidsArray)
-    let query = {
+
+	if (!userPrivileges.read) {
+		return helpers.notAllowed(req, res);
+	}
+
+	let query = {
 		uid: req.uid,
-		cid: groupData.memberPostCidsArray[0],
+		cid,
 		start: req.start || 0,
 		stop: req.stop || 10,
-		sort: req.body.sort || userSettings.categoryTopicSort,
+		sort: req.query.sort || req.body.sort || userSettings.clubTopicSort,
 		settings: userSettings
 	}
 
-	console.log("query:",query)
-	//const topicList = await categories.getCategoryById(query)
 	const topicList = await categories.getCategoryById(query)
-	console.log("topicList:",topicList)
+	if(!topicList) {
+		return renderEmpty();
+	}
+	
 	const fullTopics = await Promise.all(topicList.topics.map(async (topicData) => {
 		// 参考controller/topic
 		const set = `tid:${topicData.tid}:posts:votes` // sort === 'most_votes' ? `tid:${tid}:posts:votes` : `tid:${tid}:posts`;
@@ -246,6 +167,8 @@ clubsController.details = async function (req, res, next) {
 		topics: fullTopics,
 		isAdmin: isAdmin,
 		isGlobalMod: isGlobalMod,
+		privileges: userPrivileges,
+		showTopicTools: userPrivileges.editable,
 		allowPrivateGroups: meta.config.allowPrivateGroups,
 		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
 		...fullTopics[0]

@@ -179,7 +179,7 @@ module.exports = function (utils, Benchpress, relative_path) {
 
 	// Groups helpers
 	function membershipBtn(groupObj) {
-		if (!groupObj.isOwner) {
+		if (groupObj.isOwner) {
 		return `
 			<div class='club-join-hint'>
 				<h3># ${groupObj.displayName}</h3>
