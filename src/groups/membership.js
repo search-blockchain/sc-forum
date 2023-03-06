@@ -38,6 +38,13 @@ module.exports = function (Groups) {
 		return isMember;
 	};
 
+	Groups.listAddNewData = async function (isMember, isOwner,item) {
+		const tagContent = isOwner ? 'Owner' : (isMember ? 'Join' : '')
+		const cid = item.memberPostCidsArray?.[0] || ''
+		const obj = Object.assign({isMember, isOwner, tagContent, cid}, item)
+		return obj;
+	};
+
 	Groups.isMembers = async function (uids, groupName) {
 		if (!groupName || !uids.length) {
 			return uids.map(() => false);

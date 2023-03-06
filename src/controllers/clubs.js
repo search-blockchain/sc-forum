@@ -21,27 +21,35 @@ const clubsController = module.exports;
 
 clubsController.list = async function (req, res) {
 	const sort = req.query.sort || defaultClubsSort;
-
 	const [groupData, allowGroupCreation] = await Promise.all([
-		groups.getGroupsBySort(sort, 0, 50),
+		groups.getGroupsBySort(sort, 0, 20),
 		privileges.global.can('group:create', req.uid)
 	]);
+	let totalGroup = [];
+	let ownerGroup = [];
+	let memberGroup = [];
+	let restGroup = [];
+
+	for (let i = 0; i < groupData.length; i++) {
+	    let item = groupData[i];
+		let isMember = await groups.isMember(req.uid, item.name);
+	    let isOwner = await groups.ownership.isOwner(req.uid, item.name);
+		let obj = await groups.listAddNewData(isMember, isOwner,item)
+        if(isOwner){
+			ownerGroup.push(obj)
+		}else if(isMember){
+			memberGroup.push(obj)
+		}else {
+			restGroup.push(obj)
+		}
+	}
 	
-	let newGroupData = await Promise.all(groupData.map(async (item, index) => {
-		const [isMember, isOwner] = await Promise.all([
-			groups.isMember(req.uid, item.name),
-			// groups.isPending(req.uid, item.slug),
-			// Club.isInvited(req.uid, item.slug),
-			groups.ownership.isOwner(req.uid, item.name),
-		])
-		const tagContent = isOwner ? 'Owner' : (isMember ? 'Join' : '')
-		const cid = groupData[index].memberPostCidsArray?.[0] || ''
-		const obj = Object.assign({isMember, isOwner, tagContent, cid}, groupData[index])
-		return obj
-	}))
+	totalGroup = totalGroup.concat(ownerGroup,memberGroup,restGroup)
 	
+    console.log("totalGroup:",totalGroup)
+
 	res.render('clubs/list', {
-		groups: newGroupData,
+		groups: totalGroup,
 		allowGroupCreation: allowGroupCreation,
 		nextStart: 51,
 		title: '[[pages:clubs]]',
