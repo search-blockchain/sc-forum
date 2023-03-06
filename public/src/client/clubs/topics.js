@@ -21,7 +21,8 @@ define("forum/clubs/details", [
 	'navigator',
 	'topicList',
 	'hooks',
-	'sort'
+	'sort',
+	'forum/infinitescroll'
 ], function (
 	memberList,
 	iconSelect,
@@ -39,7 +40,8 @@ define("forum/clubs/details", [
 	navigator,
 	topicList,
 	hooks,
-	sort
+	sort,
+	infinitescroll
 ) {
 	const jsCookie = require('js-cookie');
 	// let HOST_URL = window.location.origin;
@@ -410,10 +412,10 @@ define("forum/clubs/details", [
 
 		// share.addShareHandlers(ajaxify.data.name);
 
-		topicList.init('club', loadTopicsAfter);
+		// topicList.init('club', loadTopicsAfter);
 
 		sort.handleSort('clubTopicSort', 'clubs/' + clubName);
-		const clubTopicSort = ajaxify.data.config && ajaxify.data.config.clubTopicSort || 'most_luckys';
+		const clubTopicSort = config.clubTopicSort;
 		
 		$('.sort-item')
 			.removeClass('active')
