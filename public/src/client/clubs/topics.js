@@ -78,7 +78,6 @@ define("forum/clubs/details", [
 				// $("#myModal").modal("hide");
 			});
 		});
-		
 		try {
 			const rewardCookie = jsCookie.get(`minereward:${ajaxify.data.cid}`);
 			let reward = 0;
@@ -92,8 +91,9 @@ define("forum/clubs/details", [
 				reward = window.atob(rewardCookie);
 				console.log('lucky::: ', ajaxify.data.lucky, ajaxify.data.cid, rewardCookie, reward, numRW);
 				const innerDomain = isDev ? 'localhost:3030' : 'search.club';
-				if (reward && reward === numRW && document.referrer && document.referrer.includes(innerDomain)) {
+				if (reward > 0 && reward === numRW && document.referrer && document.referrer.includes(innerDomain)) {
 					console.log('中奖', $("#myModal1"));
+					$('#myModal1 .miner-reward').text(numRW);
 					$("#myModal1").modal({
 						backdrop: true,
 						keyboard: true,
@@ -104,15 +104,15 @@ define("forum/clubs/details", [
 							console.log("button pressed");
 						});
 					});
-					$("#myModal1").on("click", function (e) {
+					setTimeout(() => {
 						jsCookie.remove(`minereward:${ajaxify.data.cid}`);
-					});
+					}, [500]);
 				}
 			}
-		} catch(e) {
+		} catch (e) {
 			console.warn(e);
 		}
-		
+
 		Details.getUserWalletInfo()
 			.then((res) => {
 				userWalletInfo = res;
@@ -229,7 +229,7 @@ define("forum/clubs/details", [
 			}
 		});
 	};
-	
+
 	Details.getUserWalletInfo = function () {
 		return new Promise(function (resolve, reject) {
 			const objFromApp = utils.getCookie("forumdata");
