@@ -45,7 +45,7 @@ define("forum/clubs/details", [
 	// let HOST_URL = window.location.origin;
 	const origin = window.location.origin;
 	const isDev = origin.indexOf('search.club') === -1;
-	const API_URL = isDev ? 'http://192.168.1.107:7979' : 'https://www.search.club/userserver';
+	const API_URL = false ? 'http://192.168.1.107:7979' : 'https://www.search.club/userserver';
 	const FORUM_URL = origin;
 	let APP_URL = 'https://www.search.club';
 	if (origin.indexOf('localhost') !== -1) {
@@ -239,6 +239,7 @@ define("forum/clubs/details", [
 			}
 			userId = objFromApp.userId;
 			token = objFromApp.token;
+			console.log('token', token)
 			$.ajax(
 				`${API_URL}/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo`,
 				{
@@ -246,7 +247,7 @@ define("forum/clubs/details", [
 					dataType: "json",
 					contentType: "application/json;charset=UTF-8",
 					headers: {
-						authorization: `Bearer ${token}`,
+						// authorization: `Bearer ${token}`,
 						"Content-Type": "application/json;charset=UTF-8",
 						Accept: "application/json",
 					},
@@ -327,22 +328,26 @@ define("forum/clubs/details", [
 				.catch(() => {});
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
-				'<button type="button" class="btn btn-primary" id="pay">Pay</button>'
+				`<button type="button" class="btn btn-primary" id="pay">
+					Pay ${clubPrice}
+				</button>`
 			);
 			$(".modal-footer").append(
 				'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
 			);
 			$("#modalBodyContent").empty();
 			$("#modalBodyContent").append(
-				`<div class="content-1">Own the club for <span class="sct" id="clubPrice">${clubPrice}</span> SCT</div>`
+				`<div class="content-1">
+					Own the club for <span class="sct" id="clubPrice">${clubPrice}</span>
+				</div>`
 			);
 			$("#pay").on("click", function () {
-				console.log("buy club with 100 sct");
+				console.log("buy club with sct");
 				$(".modal-footer").empty();
 				$(".modal-footer").append(
 					`<button type="button" class="btn btn-primary" id="pay">
 						<i class="fas fa-spin fa-spinner"></i>
-						Pay
+						Pay ${clubPrice}
 					</button>`
 				);
 				$(".modal-footer").append(
@@ -385,17 +390,20 @@ define("forum/clubs/details", [
 		} else {
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
-				'<button type="button" class="btn btn-primary" id="goToSearch">Go to Search</button>'
+				'<button type="button" class="btn btn-primary" id="goToSearch">Go to earn</button>'
 			);
 			$(".modal-footer").append(
 				'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
 			);
 			$("#modalBodyContent").empty();
-			$("#modalBodyContent").append(
-				'<div class="content-1">Your <span class="sct">SCT</span> is not enough</div>'
-			);
-			$("#modalBodyContent").append(
-				'<div class="content-2">Get more <span class="sct">SCT</span> by searching</div>'
+			// $("#modalBodyContent").append(
+			// 	'<div class="content-1">Your <span class="sct">SCT</span> is not enough</div>'
+			// );
+			// $("#modalBodyContent").append(
+			// 	'<div class="content-2">Get more <span class="sct">SCT</span> by searching</div>'
+			// );
+			$('#modalBodyContent').append(
+				'<span>Coin in your account is insufficient,earn more by searching!</span>'
 			);
 			$("#goToSearch").on("click", function () {
 				window.location.href = APP_URL;
