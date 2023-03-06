@@ -362,7 +362,7 @@ define("forum/clubs/details", [
 						dataType: "json",
 						contentType: "application/json;charset=UTF-8",
 						headers: {
-							authorization: `Bearer ${token}`,
+							// authorization: `Bearer ${token}`,
 							"Content-Type": "application/json;charset=UTF-8",
 							Accept: "application/json",
 						},
