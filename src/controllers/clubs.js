@@ -220,7 +220,7 @@ clubsController.details = async function (req, res, next) {
 		cid: groupData.memberPostCidsArray[0],
 		start: req.start || 0,
 		stop: req.stop || 10,
-		sort: req.sort || userSettings.categoryTopicSort,
+		sort: req.body.sort || userSettings.categoryTopicSort,
 		settings: userSettings
 	}
 
