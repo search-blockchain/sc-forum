@@ -55,6 +55,7 @@ topicsAPI.create = async function (caller, data) {
 		return await posts.addToQueue(payload);
 	}
 	const result = await topics.post(payload);
+	console.log("发帖结果:",result)
 	await topics.thumbs.migrate(data.uuid, result.topicData.tid);
 
 	socketHelpers.emitToUids('event:new_post', { posts: [result.postData] }, [caller.uid]);

@@ -8,6 +8,7 @@ const clubs = require('../clubs');
 const groups = require('../groups');
 const categories = require('../categories');
 const topics = require('../topics');
+const posts = require('../posts');
 const user = require('../user');
 const helpers = require('./helpers');
 const pagination = require('../pagination');
@@ -22,7 +23,7 @@ const clubsController = module.exports;
 clubsController.list = async function (req, res) {
 	const sort = req.query.sort || defaultClubsSort;
 	const [groupData, allowGroupCreation] = await Promise.all([
-		groups.getGroupsBySort(sort, 0, 20),
+		groups.getGroupsBySort(sort, 0, 1000),
 		privileges.global.can('group:create', req.uid)
 	]);
 	let totalGroup = [];
@@ -46,7 +47,7 @@ clubsController.list = async function (req, res) {
 	
 	totalGroup = totalGroup.concat(ownerGroup,memberGroup,restGroup)
 	
-    console.log("totalGroup:",totalGroup)
+    console.log("totalGroup长度:",totalGroup.length)
 
 	res.render('clubs/list', {
 		groups: totalGroup,
@@ -164,6 +165,8 @@ clubsController.details = async function (req, res, next) {
 		const start = 1
 		const stop = 50
 		await topics.getTopicWithPosts(topicData, set, req.uid, start, stop, reverse);
+		let response = await posts.getPostData(topicData.mainPid)
+		topicData.content = response.content;
 		return topicData
 	}))
 
