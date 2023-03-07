@@ -74,6 +74,9 @@ define("forum/clubs/details", [
 	Details.init = function () {
 		initSort();
 		const detailsPage = components.get("clubs/container");
+		$("#cancel-svg").on("click", function () {
+			window.location.href = "https://www.search.club/forum/clubs";
+		});
 
 		$("#buyBtn").on("click", Details.showDialogToBuy);
 		$("#myModal").on("show.bs.modal", function () {
