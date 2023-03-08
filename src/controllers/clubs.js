@@ -46,8 +46,6 @@ clubsController.list = async function (req, res) {
 	}
 	
 	totalGroup = totalGroup.concat(ownerGroup,memberGroup,restGroup)
-	
-    console.log("totalGroup长度:",totalGroup.length)
 
 	res.render('clubs/list', {
 		groups: totalGroup,
