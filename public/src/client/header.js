@@ -17,6 +17,7 @@ define('forum/header', [
 		handleStatusChange();
 		createHeaderTooltips();
 		handleLogout();
+		handleBase();
 	};
 
 	function handleStatusChange() {
@@ -74,6 +75,16 @@ define('forum/header', [
 				logout();
 			});
 			return false;
+		});
+	}
+
+	function handleBase() {
+		console.log('window');
+		$('#nav-menu-avatar').on('click', () => {
+			location.href = 'https://www.search.club/me';
+		});
+		$('#nav-menu-back').on('click', () => {
+			history.back();
 		});
 	}
 
