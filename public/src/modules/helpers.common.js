@@ -191,7 +191,7 @@ module.exports = function (utils, Benchpress, relative_path) {
 			return `
 				<div class='club-join-hint'>
 					<h3># ${groupObj.displayName}</h3>
-					<button  class="btn btn-danger" data-action="leave" data-group="${groupObj.displayName}" ${groupObj.disableLeave ? " disabled" : ""}>
+					<button  class="btn btn-danger btn-danger-member" data-action="leave" data-group="${groupObj.displayName}" ${groupObj.disableLeave ? " disabled" : ""}>
 						[[groups:membership.membership.leave-group]]
 					</button>
 				</div>
@@ -456,6 +456,7 @@ module.exports = function (utils, Benchpress, relative_path) {
 		if (!userObj) {
 			userObj = this;
 		}
+		// console.log('userOBJ',userObj)
 
 		const attributes = [
 			'alt="' + userObj.username + '"',

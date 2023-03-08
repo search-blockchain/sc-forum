@@ -341,7 +341,7 @@ define("forum/clubs/details", [
 			return;
 			// return alerts.error("未登录");
 		}
-		if (!userWalletInfo.avaliableBalance) return alerts.error("balance is 0");
+		// if (!userWalletInfo.avaliableBalance) return alerts.error("balance is 0");
 		// if(!clubPrice) return alerts.error("获取不到俱乐部价格");
 		if (clubPrice && Number(userWalletInfo.avaliableBalance) > clubPrice) {
 			Details.buyActiveCode()
