@@ -882,13 +882,18 @@ define("forum/clubs/details", [
 			`;
 		} else if (groupObj.isMember) {
 			headerHtml = `
-				<div class='club-join-hint'>
+				<div class='club-join-hint isOwner'>
 					<h3># ${groupObj.displayName}</h3>
-					<button  class="btn btn-danger" data-action="leave" data-group="${groupObj.displayName}" ${groupObj.disableLeave ? " disabled" : ""}>
-						Leave
-					</button>
 				</div>
 			`;
+			// headerHtml = `
+			// 	<div class='club-join-hint'>
+			// 		<h3># ${groupObj.displayName}</h3>
+			// 		<button  class="btn btn-danger" data-action="leave" data-group="${groupObj.displayName}" ${groupObj.disableLeave ? " disabled" : ""}>
+			// 			Leave
+			// 		</button>
+			// 	</div>
+			// `;
 		} else if (groupObj.isPending) {
 			headerHtml = '<button class="btn btn-warning disabled"><i class="fa fa-clock-o"></i> Invitation Pending</button>';
 		} else if (groupObj.isInvited) {
