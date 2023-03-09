@@ -91,7 +91,6 @@ Clubs.getGroupsFromSetDeleteOwnerAndMember = async function (set, start, stop,ui
 	if (set === 'groups:visible:name') {
 		clubNames = clubNames.map(name => name.split(':')[1]);
 	}
-
 	return await Clubs.getGroupsAndMembers(clubNames);
 };
 

@@ -45,7 +45,6 @@ module.exports = function (Clubs) {
 			}
 		}
 		memberGroups.groupsNames.push(groupNames[0])
-		console.log("48行:",memberGroups)
 		const promises = [
 			db.setObject(`memberGroups:${uid}`, memberGroups),
 			db.sortedSetsAdd(groupsToJoin.map(groupName => `group:${groupName}:members`), Date.now(), uid),
@@ -101,10 +100,12 @@ module.exports = function (Clubs) {
 	}
 
 	async function setGroupTitleIfNotSet(groupNames, uid) {
-		const ignore = ['registered-users', 'verified-users', 'unverified-users', Groups.BANNED_USERS];
-		groupNames = groupNames.filter(
-			groupName => !ignore.includes(groupName) && !Groups.isPrivilegeClub(groupName)
-		);
+		console.log("groupNames:",groupNames)
+		console.log("uid:",uid)
+		// const ignore = ['registered-users', 'verified-users', 'unverified-users', Groups.BANNED_USERS];
+		// groupNames = groupNames.filter(
+		// 	groupName => !ignore.includes(groupName) && !Groups.isPrivilegeClub(groupName)
+		// );
 		if (!groupNames.length) {
 			return;
 		}
