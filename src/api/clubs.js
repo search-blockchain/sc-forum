@@ -103,7 +103,7 @@ clubsAPI.join = async function (caller, data) {
 		throw new Error('[[error:invalid-uid]]');
 	}
 
-    await clubs.setMemberObj(data.uid)
+    await clubs.setMemberObj(data.uid,clubName)
 
 	const isSelf = parseInt(caller.uid, 10) === parseInt(data.uid, 10);
 	if (!meta.config.allowPrivateClubs && isSelf) {

@@ -291,14 +291,14 @@ Clubs.getByClubSlug = async function (slug, options) {
 	return await Clubs.get(groupName, options);
 };
 
-Clubs.setMemberObj = async function (uid){
+Clubs.setMemberObj = async function (uid,clubName){
 	let memberGroups = await db.getObject(`memberGroups:${uid}`);
 	if(memberGroups == null){
 		memberGroups = {
 			"groupsNames": []		
 		}
 	}
-	memberGroups.groupsNames.push(groupNames[0])
+	memberGroups.groupsNames.push(clubName)
 	await db.setObject(`memberGroups:${uid}`, memberGroups)
 }
 
