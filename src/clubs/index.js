@@ -4,6 +4,7 @@ const user = require('../user');
 const db = require('../database');
 const plugins = require('../plugins');
 const slugify = require('../slugify');
+const { club } = require('../middleware/assert');
 
 const Clubs = module.exports;
 
@@ -66,7 +67,7 @@ Clubs.getGroupsBySortDeleteOwnerAndMember = async function (sort, start, stop,ui
 };
 
 Clubs.getGroupsFromSet = async function (set, start, stop) {
-	let clubNames;
+	let clubNames = [];
 	if (set === 'groups:visible:name') {
 		clubNames = await db.getSortedSetRangeByLex(set, '-', '+', start, stop - start + 1);
 	} else {
@@ -80,7 +81,7 @@ Clubs.getGroupsFromSet = async function (set, start, stop) {
 };
 
 Clubs.getGroupsFromSetDeleteOwnerAndMember = async function (set, start, stop,uid) {
-	let clubNames;
+	let clubNames = [];
 	if (set === 'groups:visible:name') {
 		clubNames = await db.getSortedSetRangeByLex(set, '-', '+', start, stop - start + 1);
 	} else {
