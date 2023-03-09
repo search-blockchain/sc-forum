@@ -9,6 +9,7 @@ define('forum/header', [
 	const module = {};
 
 	module.prepareDOM = function () {
+		console.log('header prepare dom');
 		if (app.user.uid > 0) {
 			unread.initUnreadTopics();
 		}
@@ -17,6 +18,7 @@ define('forum/header', [
 		handleStatusChange();
 		createHeaderTooltips();
 		handleLogout();
+		handleBase();
 	};
 
 	function handleStatusChange() {
@@ -75,6 +77,32 @@ define('forum/header', [
 				logout();
 			});
 			return false;
+		});
+	}
+
+	function handleBase() {
+		console.log('window');
+		$(window).on('action:ajaxify.start', function (e, data) {
+			const currentUrl = data.url;
+			console.log('ajaxify start:...== ', e.target.ajaxify, data.url);
+			if (currentUrl.startsWith('clubs')) {
+				$('#native-top-navbar').remove();
+				$('#nav-dropdown').remove();
+				if (currentUrl.startsWith('clubs/')) {
+					$('#clubs-home-navbar').hide();
+					$('#clubs-detail-navbar').show();
+				} else {
+					$('#clubs-detail-navbar').hide();
+					$('#clubs-home-navbar').show();
+				}
+				$('#custom-top-navbar').removeClass('hidden');
+			} else {
+				$('#custom-top-navbar').remove();
+			}
+			$('#container-header').removeClass('hidden');
+		});
+		$('#nav-menu-avatar').on('click', () => {
+			location.href = 'https://www.search.club/me';
 		});
 	}
 

@@ -41,7 +41,7 @@ define("forum/clubs/details", [
 	topicList,
 	hooks,
 	sort,
-	infinitescroll
+	infinitescroll,
 ) {
 	const jsCookie = require("js-cookie");
 	// let HOST_URL = window.location.origin;
@@ -73,7 +73,10 @@ define("forum/clubs/details", [
 
 	Details.init = function () {
 		initSort();
-		const detailsPage = components.get("clubs/container");
+		// const detailsPage = components.get("clubs/container");
+		const headerComp = components.get('navbar');
+		console.log('----- topics page ---->>: ', ajaxify.data);
+		setHeader(ajaxify.data.group);
 		$("#cancel-svg").on("click", function () {
 			window.location.href = "https://www.search.club/forum/clubs";
 		});
@@ -169,14 +172,16 @@ define("forum/clubs/details", [
 		// 	$("#myModal").remove();
 		// });
 
-		detailsPage.on("click", "[data-action]", function () {
+		headerComp.on("click", "[data-action]", function () {
 			const btnEl = $(this);
-			const userRow = btnEl.parents("[data-uid]");
-			const ownerFlagEl = userRow.find(".member-name > i");
-			const isOwner = !ownerFlagEl.hasClass("invisible");
-			const uid = userRow.attr("data-uid");
+			const uid = ajaxify.data.currentUID;
 			const action = btnEl.attr("data-action");
-
+			console.log('click==: ', btnEl, uid, action, ajaxify.data);
+			console.log('是否登录: ', uid);
+			// if (!uid) {
+			// 	location.href = '';
+			// 	return;
+			// }
 			switch (action) {
 				// case 'toggleOwnership':
 				// 	api[isOwner ? 'del' : 'put'](`/groups/${ajaxify.data.group.slug}/ownership/${uid}`, {}).then(() => {
@@ -863,6 +868,50 @@ define("forum/clubs/details", [
 				});
 			}
 		);
+	}
+
+	function setHeader(groupObj) {
+		let headerHtml = '';
+		console.log('set header==> ', groupObj);
+		if (groupObj.isOwner) {
+			headerHtml = `
+				<div class='club-join-hint isOwner'>
+					<h3># ${groupObj.displayName}</h3>
+					<span class='tag'>owner</span>
+				</div>
+			`;
+		} else if (groupObj.isMember) {
+			headerHtml = `
+				<div class='club-join-hint'>
+					<h3># ${groupObj.displayName}</h3>
+					<button  class="btn btn-danger" data-action="leave" data-group="${groupObj.displayName}" ${groupObj.disableLeave ? " disabled" : ""}>
+						Leave
+					</button>
+				</div>
+			`;
+		} else if (groupObj.isPending) {
+			headerHtml = '<button class="btn btn-warning disabled"><i class="fa fa-clock-o"></i> Invitation Pending</button>';
+		} else if (groupObj.isInvited) {
+			headerHtml = (
+				'<button class="btn btn-link" data-action="rejectInvite" data-group="' +
+				groupObj.displayName +
+				'">[[groups:membership.reject]]</button><button class="btn btn-success" data-action="acceptInvite" data-group="' +
+				groupObj.name +
+				'"><i class="fa fa-plus"></i> Accept Invitation</button>'
+			);
+		} else if (
+			!groupObj.disableJoinRequests
+		) {
+			headerHtml = `
+				<div class='club-join-hint'>
+					<h3># ${groupObj.displayName}</h3>
+					<button class="btn btn-success" data-action="join" data-group="${groupObj.displayName}">
+						Join
+					</button>
+				</div>
+			`;
+		}
+		$('#clubs-detail-navbar .club-name')?.eq(0)?.html(headerHtml);
 	}
 	// ---------------- END /public/src/client/groups/details.js ---------------
 
