@@ -30,6 +30,10 @@ clubsController.list = async function (req, res) {
 		nextStart = totalClub.length
 	}else{
 		totalClub = await clubs.hasUidGetClubsList(req)
+        if(totalClub.length == 0){
+			totalClub = await clubs.getGroupsBySortDeleteOwnerAndMember(sort, 0, 14,req.uid)
+			nextStart = totalClub.length
+		}
 	}
 
 	res.render('clubs/list', {

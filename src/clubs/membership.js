@@ -36,7 +36,9 @@ module.exports = function (Clubs) {
 			Clubs.getGroupsAndMembers(memberGroupsNames),
 			Clubs.getGroupsAndMembers(ownerGroupsNames),
 		]);
-	
+	    console.log("memberGroupsData:",memberGroupsData)
+        console.log("ownerGroupsData:",ownerGroupsData)
+
 		let totalClub = []
 		let ownerClub = []
 		let memberClub = []
@@ -60,6 +62,7 @@ module.exports = function (Clubs) {
 		memberClub.sort((a,b)=>{return b.memberCount - a.memberCount})
 	
 		totalClub = totalClub.concat(ownerClub,memberClub)
+
 		return totalClub
 	}
 
