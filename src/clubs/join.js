@@ -92,8 +92,6 @@ module.exports = function (Clubs) {
 	}
 
 	async function setGroupTitleIfNotSet(groupNames, uid) {
-		console.log("groupNames:",groupNames)
-		console.log("uid:",uid)
 		// const ignore = ['registered-users', 'verified-users', 'unverified-users', Groups.BANNED_USERS];
 		// groupNames = groupNames.filter(
 		// 	groupName => !ignore.includes(groupName) && !Groups.isPrivilegeClub(groupName)

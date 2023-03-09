@@ -46,7 +46,9 @@ module.exports = function (Clubs) {
 			let isMember = await Clubs.isMember(req.uid, item.name);
 			let isOwner = await Clubs.ownership.isOwner(req.uid, item.name);
 			let obj = await Clubs.listAddNewData(isMember, isOwner,item)
-			ownerClub.push(obj)
+			if(isOwner){
+				ownerClub.push(obj)
+			}
 		}
 		ownerClub.sort((a,b)=>{return b.memberCount - a.memberCount})
 		
@@ -55,7 +57,9 @@ module.exports = function (Clubs) {
 			let isMember = await Clubs.isMember(req.uid, item.name);
 			let isOwner = await Clubs.ownership.isOwner(req.uid, item.name);
 			let obj = await Clubs.listAddNewData(isMember, isOwner,item)
-			memberClub.push(obj)
+			if(!isOwner && isMember){
+				memberClub.push(obj)
+			}
 		}
 		memberClub.sort((a,b)=>{return b.memberCount - a.memberCount})
 	
