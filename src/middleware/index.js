@@ -106,12 +106,10 @@ Google.getUidByGoogleId = function (gplusid, callback) {
 };
 
 Google.login = function (gplusid, handle, email, picture, callback) {
-
 	Google.getUidByGoogleId(gplusid, (err, uid) => {
 		if (err) {
 			return callback(err);
 		}
-
 		
 		if (uid !== null) {
 			// Existing User
@@ -184,6 +182,7 @@ Google.logout = async function (req, res, next) {
 		await logoutAsync(req);
 		await destroyAsync(req);
 		res.clearCookie('forumdata');
+		res.clearCookie('express.cacheid');
 		res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
 
 		await user.setUserField(uid, 'lastonline', Date.now() - (meta.config.onlineCutoff * 60000));
@@ -209,9 +208,39 @@ Google.logout = async function (req, res, next) {
 
 middleware.googleAuth = helpers.try(async (req, res, next) => {
 	console.log('login - googleAuth req.loggedIn -> ', req.loggedIn)
-	if(req.loggedIn) {
+	const isAdmin = req.uid == 1;
+	const cookieFromApp = (req.cookies ? req.cookies.forumdata : '') || '';
+	const decodeData = Buffer.from(cookieFromApp, 'base64').toString();
+	let cacheUid = (req.cookies ? req.cookies['express.cacheid'] : '') || '';
+	let appData = {};
+
+	if(cacheUid) {
+		cacheUid = cacheUid.substr(13);
+	}
+
+	try {
+		appData = JSON.parse(decodeData || '{}');
+	} catch (e) {
 		return next();
 	}
+
+
+	console.log('-------------START GoogleAuth的相关数据----------------')
+	console.log('cookieFromApp', cookieFromApp, '\n')
+	console.log('appData', appData, '\n')
+	console.log('cacheUid', cacheUid, '\n')
+	console.log('req.loggedIn', req.loggedIn, '\n')
+	console.log('isAdmin', isAdmin, '\n')
+	console.log('-------------END GoogleAuth的相关数据----------------')
+
+	if(!cookieFromApp || req.loggedIn && (appData.userId == cacheUid || !cookieFromApp && isAdmin)) {
+		return next();
+	}
+	//  else if(req.loggedIn) {
+	// 	await Google.logout(req, res, next);
+	// }
+	
+
 	// if (req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && req.user.uid > 0) {
 	// 	// TODO no use
 	// 	console.log('login - googleAuth update userdata', req.user)
@@ -221,17 +250,8 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 	// 	return next();
 	// }
 	
-	const cookieFromApp = req.cookies ? req.cookies.forumdata : '';
-
-	console.log('----forumdata', cookieFromApp)
-	if (!cookieFromApp) {
-		return next();
-	}
-	
 	// TODO 两侧增加多余string提高解析门槛
 	// TODO 调用GoogleAPI做实际校验
-	const decodeData = Buffer.from(cookieFromApp, 'base64').toString();
-	const appData = JSON.parse(decodeData || '{}');
 	console.log('login - googleAuth forumdata decode: ', appData);
 	const displayName = (appData.username || appData.name);
 	const {err, userData} = await new Promise((resolve, reject) => {
@@ -240,7 +260,9 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 			if (err) {
 				return reject({err, userData})
 			}
+			
 			req.isFromApp = true
+			userData.appUid = appData.userId
 			req.userFromApp = userData
 			// res.clearCookie('forumdata');
 			return resolve({err, userData})
