@@ -45,6 +45,7 @@ module.exports = function (Clubs) {
 			}
 		}
 		memberGroups.groupsNames.push(groupNames[0])
+		console.log("48行:",memberGroups)
 		const promises = [
 			db.setObject(`memberGroups:${uid}`, memberGroups),
 			db.sortedSetsAdd(groupsToJoin.map(groupName => `group:${groupName}:members`), Date.now(), uid),
