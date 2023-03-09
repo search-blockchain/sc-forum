@@ -212,7 +212,7 @@ define("forum/clubs/details", [
 				case "join":
 					api
 						.put(
-							"/groups/" +
+							"/clubs/" +
 								ajaxify.data.group.slug +
 								"/membership/" +
 								(uid || app.user.uid),
@@ -225,7 +225,7 @@ define("forum/clubs/details", [
 				case "leave":
 					api
 						.del(
-							"/groups/" +
+							"/clubs/" +
 								ajaxify.data.group.slug +
 								"/membership/" +
 								(uid || app.user.uid),
