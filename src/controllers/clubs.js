@@ -22,40 +22,28 @@ const clubsController = module.exports;
 
 clubsController.list = async function (req, res) {
 	const sort = req.query.sort || defaultClubsSort;
-	const [groupData, allowGroupCreation] = await Promise.all([
-		groups.getGroupsBySort(sort, 0, 1000),
-		privileges.global.can('group:create', req.uid)
-	]);
-	let totalGroup = [];
-	let ownerGroup = [];
-	let memberGroup = [];
-	let restGroup = [];
-
-	for (let i = 0; i < groupData.length; i++) {
-	    let item = groupData[i];
-		let isMember = await groups.isMember(req.uid, item.name);
-	    let isOwner = await groups.ownership.isOwner(req.uid, item.name);
-		let obj = await groups.listAddNewData(isMember, isOwner,item)
-        if(isOwner){
-			ownerGroup.push(obj)
-		}else if(isMember){
-			memberGroup.push(obj)
-		}else {
-			restGroup.push(obj)
+	let totalClub = []
+	let allowClubCreation = await privileges.global.can('group:create', req.uid)
+	let nextStart = 0
+	if(req.uid == 0){
+		totalClub = await clubs.getGroupsBySortDeleteOwnerAndMember(sort, 0, 14,req.uid)
+		nextStart = totalClub.length
+	}else{
+		totalClub = await clubs.hasUidGetClubsList(req)
+        if(totalClub.length == 0){
+			totalClub = await clubs.getGroupsBySortDeleteOwnerAndMember(sort, 0, 14,req.uid)
+			nextStart = totalClub.length
 		}
 	}
-	
-	totalGroup = totalGroup.concat(ownerGroup,memberGroup,restGroup)
 
 	res.render('clubs/list', {
-		groups: totalGroup,
-		allowGroupCreation: allowGroupCreation,
-		nextStart: 51,
+		groups: totalClub,
+		allowGroupCreation: allowClubCreation,
+		nextStart: nextStart,
 		title: '[[pages:clubs]]',
 		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]' }]),
 	});
 };
-
 
 clubsController.details = async function (req, res, next) {
 	let slug = req.params.slug

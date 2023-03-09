@@ -23,6 +23,10 @@ module.exports = function (module) {
 		return await getSortedSetRange(key, start, stop, '-inf', '+inf', -1, false);
 	};
 
+	module.getSortedSetRevRangeDeleteOwnerAndMember = async function (key, start, stop,list) {
+		return await getSortedSetRangeDeleteOwnerAndMember(key, start, stop, '-inf', '+inf', -1, false,list);
+	};
+
 	module.getSortedMultiSetsRevRange = async function (key, start, stop) {
 		return await getSortedMultiSetsRange(key, start, stop, '-inf', '+inf', -1, false);
 	};
@@ -109,6 +113,93 @@ module.exports = function (module) {
 			}
 		} else {
 			result = await doQuery(query._key, fields, start, limit);
+		}
+
+		if (reverse) {
+			result.reverse();
+		}
+		if (!withScores) {
+			result = result.map(item => item.value);
+		}
+
+		return result;
+	}
+
+	async function getSortedSetRangeDeleteOwnerAndMember(key, start, stop, min, max, sort, withScores,list) {
+		if (!key) {
+			return;
+		}
+		const isArray = Array.isArray(key);
+		if ((start < 0 && start > stop) || (isArray && !key.length)) {
+			return [];
+		}
+		const query = { _key: key };
+		if (isArray) {
+			if (key.length > 1) {
+				query._key = { $in: key };
+			} else {
+				query._key = key[0];
+			}
+		}
+
+		if (min !== '-inf') {
+			query.score = { $gte: min };
+		}
+		if (max !== '+inf') {
+			query.score = query.score || {};
+			query.score.$lte = max;
+		}
+
+		if (max === min) {
+			query.score = max;
+		}
+
+		const fields = { _id: 0, _key: 0 };
+		if (!withScores) {
+			fields.score = 0;
+		}
+
+		let reverse = false;
+		if (start === 0 && stop < -1) {
+			reverse = true;
+			sort *= -1;
+			start = Math.abs(stop + 1);
+			stop = -1;
+		} else if (start < 0 && stop > start) {
+			const tmp1 = Math.abs(stop + 1);
+			stop = Math.abs(start + 1);
+			start = tmp1;
+		}
+
+		let limit = stop - start + 1;
+		if (limit <= 0) {
+			limit = 0;
+		}
+
+		let result = [];
+		async function doQuery(_key, fields, skip, limit,notQueryList) {
+			query.value = {$nin :notQueryList}
+			return await module.client.collection('objects').find({ ...query, ...{ _key: _key } }, { projection: fields })
+				.sort({ score: sort })
+				.skip(skip)
+				.limit(limit)
+				.toArray();
+		}
+
+		if (isArray && key.length > 100) {
+			const batches = [];
+			const batch = require('../../batch');
+			const batchSize = Math.ceil(key.length / Math.ceil(key.length / 100));
+			await batch.processArray(key, async currentBatch => batches.push(currentBatch), { batch: batchSize });
+			const batchData = await Promise.all(batches.map(
+				batch => doQuery({ $in: batch }, { _id: 0, _key: 0 }, 0, stop + 1,list)
+			));
+			result = dbHelpers.mergeBatch(batchData, 0, stop, sort);
+			if (start > 0) {
+				result = result.slice(start, stop !== -1 ? stop + 1 : undefined);
+			}
+		} else {
+			result = await doQuery(query._key, fields, start, limit,list);
 		}
 
 		if (reverse) {
@@ -539,8 +630,16 @@ module.exports = function (module) {
 		return await sortedSetLex(key, min, max, 1, start, count);
 	};
 
+	module.getSortedSetRangeDeleteOwnerAndMemberByLex = async function (key, min, max, start, count) {
+		return await sortedSetLexDeleteOwnerAndMember(key, min, max, 1, start, count);
+	};
+
 	module.getSortedSetRevRangeByLex = async function (key, max, min, start, count) {
 		return await sortedSetLex(key, min, max, -1, start, count);
+	};
+
+	module.getSortedSetRevRangeDeleteOwnerAndMemberByLex = async function (key, max, min, start, count) {
+		return await sortedSetLexDeleteOwnerAndMember(key, min, max, -1, start, count);
 	};
 
 	module.sortedSetLexCount = async function (key, min, max) {
