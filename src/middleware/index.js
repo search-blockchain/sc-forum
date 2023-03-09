@@ -106,10 +106,12 @@ Google.getUidByGoogleId = function (gplusid, callback) {
 };
 
 Google.login = function (gplusid, handle, email, picture, callback) {
+
 	Google.getUidByGoogleId(gplusid, (err, uid) => {
 		if (err) {
 			return callback(err);
 		}
+
 		
 		if (uid !== null) {
 			// Existing User
@@ -207,24 +209,9 @@ Google.logout = async function (req, res, next) {
 
 middleware.googleAuth = helpers.try(async (req, res, next) => {
 	console.log('login - googleAuth req.loggedIn -> ', req.loggedIn)
-	const isAdmin = req.uid == 1;
-	const cookieFromApp = (req.cookies ? req.cookies.forumdata : '') || '';
-	const decodeData = Buffer.from(cookieFromApp, 'base64').toString();
-	let appData = {};
-
-	try {
-		appData = JSON.parse(decodeData || '{}');
-	} catch (e) {
-		return next(e);
-	}
-
-	if(!cookieFromApp || req.loggedIn && (appData.clubUid == req.uid || !cookieFromApp && isAdmin)) {
+	if(req.loggedIn) {
 		return next();
-	} else if(req.loggedIn) {
-		await Google.logout(req, res, next);
 	}
-	
-
 	// if (req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && req.user.uid > 0) {
 	// 	// TODO no use
 	// 	console.log('login - googleAuth update userdata', req.user)
@@ -234,8 +221,17 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 	// 	return next();
 	// }
 	
+	const cookieFromApp = req.cookies ? req.cookies.forumdata : '';
+
+	console.log('----forumdata', cookieFromApp)
+	if (!cookieFromApp) {
+		return next();
+	}
+	
 	// TODO 两侧增加多余string提高解析门槛
 	// TODO 调用GoogleAPI做实际校验
+	const decodeData = Buffer.from(cookieFromApp, 'base64').toString();
+	const appData = JSON.parse(decodeData || '{}');
 	console.log('login - googleAuth forumdata decode: ', appData);
 	const displayName = (appData.username || appData.name);
 	const {err, userData} = await new Promise((resolve, reject) => {
