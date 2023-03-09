@@ -39,7 +39,7 @@ module.exports = function (Groups) {
 	};
 
 	Groups.listAddNewData = async function (isMember, isOwner,item) {
-		const tagContent = isOwner ? 'Owner' : (isMember ? 'Join' : '')
+		const tagContent = isOwner ? 'owner' : (isMember ? 'member' : '')
 		const cid = item.memberPostCidsArray?.[0] || ''
 		const obj = Object.assign({isMember, isOwner, tagContent, cid}, item)
 		return obj;

@@ -82,7 +82,6 @@ app = window.app || {};
 		});
 
 		socket.on('checkSession', function (uid) {
-			console.log('check session===> ', uid);
 			if (parseInt(uid, 10) !== parseInt(app.user.uid, 10)) {
 				handleSessionMismatch();
 			}
@@ -101,6 +100,7 @@ app = window.app || {};
 			require(['logout'], function (logout) {
 				require('js-cookie').remove('forumdata');
 				require('js-cookie').remove('express.sid');
+				require('js-cookie').remove('express.cacheid');
 				logout();
 			});
 		});

@@ -7,8 +7,10 @@ const user = require('../user');
 const plugins = require('../plugins');
 const cache = require('../cache');
 
-module.exports = function (Groups) {
-	Groups.join = async function (groupNames, uid) {
+const clubs = require('../clubs');
+
+module.exports = function (Clubs) {
+	Clubs.join = async function (groupNames, uid) {
 		if (!groupNames) {
 			throw new Error('[[error:invalid-data]]');
 		}
@@ -24,8 +26,8 @@ module.exports = function (Groups) {
 		}
 
 		const [isMembers, exists, isAdmin] = await Promise.all([
-			Groups.isMemberOfGroups(uid, groupNames),
-			Groups.exists(groupNames),
+			clubs.isMemberOfGroups(uid, groupNames),
+			clubs.exists(groupNames),
 			user.isAdministrator(uid),
 		]);
 
@@ -36,8 +38,15 @@ module.exports = function (Groups) {
 			return;
 		}
 		await createNonExistingGroups(groupsToCreate);
-
+		let memberGroups = await db.getObject(`memberGroups:${uid}`);
+		if(memberGroups == null){
+			memberGroups = {
+				"groupsNames": []		
+			}
+		}
+		memberGroups.groupsNames.push(groupNames[0])
 		const promises = [
+			db.setObject(`memberGroups:${uid}`, memberGroups),
 			db.sortedSetsAdd(groupsToJoin.map(groupName => `group:${groupName}:members`), Date.now(), uid),
 			db.incrObjectField(groupsToJoin.map(groupName => `group:${groupName}`), 'memberCount'),
 		];
@@ -47,10 +56,10 @@ module.exports = function (Groups) {
 
 		await Promise.all(promises);
 
-		Groups.clearCache(uid, groupsToJoin);
+		clubs.clearCache(uid, groupsToJoin);
 		cache.del(groupsToJoin.map(name => `group:${name}:members`));
 
-		const groupData = await Groups.getClubsFields(groupsToJoin, ['name', 'hidden', 'memberCount']);
+		const groupData = await clubs.getClubsFields(groupsToJoin, ['name', 'hidden', 'memberCount']);
 		const visibleGroups = groupData.filter(groupData => groupData && !groupData.hidden);
 
 		if (visibleGroups.length) {

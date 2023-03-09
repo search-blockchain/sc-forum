@@ -4,6 +4,7 @@ const user = require('../user');
 const db = require('../database');
 const plugins = require('../plugins');
 const slugify = require('../slugify');
+const { club } = require('../middleware/assert');
 
 const Clubs = module.exports;
 
@@ -43,6 +44,90 @@ Clubs.getEphemeralClub = function (groupName) {
 		hidden: 0,
 		system: 1,
 	};
+};
+
+Clubs.getGroupsBySort = async function (sort, start, stop) {
+	let set = 'groups:visible:name';
+	if (sort === 'count') {
+		set = 'groups:visible:memberCount';
+	} else if (sort === 'date') {
+		set = 'groups:visible:createtime';
+	}
+	return await Clubs.getGroupsFromSet(set, start, stop);
+};
+
+Clubs.getGroupsBySortDeleteOwnerAndMember = async function (sort, start, stop,uid) {
+	let set = 'groups:visible:name';
+	if (sort === 'count') {
+		set = 'groups:visible:memberCount';
+	} else if (sort === 'date') {
+		set = 'groups:visible:createtime';
+	}
+	return await Clubs.getGroupsFromSetDeleteOwnerAndMember(set, start, stop,uid);
+};
+
+Clubs.getGroupsFromSet = async function (set, start, stop) {
+	let clubNames = [];
+	if (set === 'groups:visible:name') {
+		clubNames = await db.getSortedSetRangeByLex(set, '-', '+', start, stop - start + 1);
+	} else {
+		clubNames = await db.getSortedSetRevRange(set, start, stop);
+	}
+	if (set === 'groups:visible:name') {
+		clubNames = clubNames.map(name => name.split(':')[1]);
+	}
+
+	return await Clubs.getGroupsAndMembers(clubNames);
+};
+
+Clubs.getGroupsFromSetDeleteOwnerAndMember = async function (set, start, stop,uid) {
+	let clubNames = [];
+	if (set === 'groups:visible:name') {
+		clubNames = await db.getSortedSetRangeByLex(set, '-', '+', start, stop - start + 1);
+	} else {
+		let totalNotQueryGroups = await Clubs.getOwnerAndMemberGroupsNamesByUid(uid)
+		clubNames = await db.getSortedSetRevRangeDeleteOwnerAndMember(set, start, stop,totalNotQueryGroups);
+	}
+	if (set === 'groups:visible:name') {
+		clubNames = clubNames.map(name => name.split(':')[1]);
+	}
+
+	return await Clubs.getGroupsAndMembers(clubNames);
+};
+
+Clubs.getOwnerAndMemberGroupsNamesByUid = async function (uid) {
+	let totalNotQueryGroups = [];
+	let ownerGroups = await db.getObject(`ownerGroups:${uid}`)
+	let memberGroups = await db.getObject(`memberGroups:${uid}`);
+
+	let ownerGroupsNames = []
+	let memberGroupsNames = []
+
+	if(ownerGroups != null){
+		ownerGroupsNames = ownerGroups.groupsNames
+	}
+
+	if(memberGroups != null){
+		memberGroupsNames = memberGroups.groupsNames
+	}
+	
+	totalNotQueryGroups = totalNotQueryGroups.concat(ownerGroupsNames,memberGroupsNames)
+
+	return totalNotQueryGroups
+}
+
+Clubs.getGroupsAndMembers = async function (clubNames) {
+	const [clubs, members] = await Promise.all([
+		Clubs.getClubsData(clubNames),
+		Clubs.getMemberUsers(clubNames, 0, 9),
+	]);
+	clubs.forEach((club, index) => {
+		if (club) {
+			club.members = members[index] || [];
+			club.truncated = club.memberCount > club.members.length;
+		}
+	});
+	return clubs;
 };
 
 Clubs.removeEphemeralClubs = function (groups) {

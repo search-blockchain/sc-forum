@@ -190,7 +190,7 @@ SocketClubs.loadMore = async (socket, data) => {
 	const groupsPerPage = 10;
 	const start = parseInt(data.after, 10);
 	const stop = start + groupsPerPage - 1;
-	const groupData = await groups.getGroupsBySort(data.sort, start, stop);
+	const groupData = await clubs.getGroupsBySortDeleteOwnerAndMember(data.sort, start, stop,socket.uid);
 	return { groups: groupData, nextStart: stop + 1 };
 };
 

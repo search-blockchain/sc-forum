@@ -22,42 +22,24 @@ const clubsController = module.exports;
 
 clubsController.list = async function (req, res) {
 	const sort = req.query.sort || defaultClubsSort;
-	const [groupData, allowGroupCreation] = await Promise.all([
-		groups.getGroupsBySort(sort, 0, 1000),
-		privileges.global.can('group:create', req.uid)
-	]);
-	let totalGroup = [];
-	let ownerGroup = [];
-	let memberGroup = [];
-	let restGroup = [];
+	let totalClub = []
+	let allowClubCreation = await privileges.global.can('group:create', req.uid)
+	let nextStart = 0
 
-	for (let i = 0; i < groupData.length; i++) {
-	    let item = groupData[i];
-		let isMember = await groups.isMember(req.uid, item.name);
-	    let isOwner = await groups.ownership.isOwner(req.uid, item.name);
-		let obj = await groups.listAddNewData(isMember, isOwner,item)
-        if(isOwner){
-			ownerGroup.push(obj)
-		}else if(isMember){
-			memberGroup.push(obj)
-		}else {
-			restGroup.push(obj)
-		}
+    totalClub = await clubs.hasUidGetClubsList(req)
+    if(totalClub.length == 0){
+		totalClub = await clubs.getGroupsBySortDeleteOwnerAndMember(sort, 0, 14,req.uid)
+		nextStart = totalClub.length
 	}
-	
-	totalGroup = totalGroup.concat(ownerGroup,memberGroup,restGroup)
-	
-    console.log("totalGroup长度:",totalGroup.length)
 
 	res.render('clubs/list', {
-		groups: totalGroup,
-		allowGroupCreation: allowGroupCreation,
-		nextStart: 51,
+		groups: totalClub,
+		allowGroupCreation: allowClubCreation,
+		nextStart: nextStart,
 		title: '[[pages:clubs]]',
 		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]' }]),
 	});
 };
-
 
 clubsController.details = async function (req, res, next) {
 	let slug = req.params.slug
@@ -169,7 +151,7 @@ clubsController.details = async function (req, res, next) {
 		topicData.content = response.content;
 		return topicData
 	}))
-	
+
 	res.render('clubs/topics', {
 		currentUID: req.uid,
 		title: `[[pages:clubs, ${groupData.displayName}]]`,
@@ -183,61 +165,6 @@ clubsController.details = async function (req, res, next) {
 		allowPrivateGroups: meta.config.allowPrivateGroups,
 		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
 		...fullTopics[0]
-	});
-};
-
-clubsController.groupDetails = async function (req, res, next) {
-	let slug = req.params.slug
-	const lowercaseSlug = slugify(slug).toLowerCase();
-	if (slug !== lowercaseSlug) {
-		if (res.locals.isAPI) {
-			slug = lowercaseSlug;
-		} else {
-			return res.redirect(`${nconf.get('relative_path')}/clubs/${lowercaseSlug}`);
-		}
-	}
-	const groupName = await groups.getGroupNameByGroupSlug(slug);
-	if (!groupName) {
-		return next();
-	}
-	const [exists, isHidden, isAdmin, isGlobalMod] = await Promise.all([
-		groups.exists(groupName),
-		groups.isHidden(groupName),
-		user.isAdministrator(req.uid),
-		user.isGlobalModerator(req.uid),
-	]);
-	if (!exists) {
-		return next();
-	}
-	if (isHidden && !isAdmin && !isGlobalMod) {
-		const [isMember, isInvited] = await Promise.all([
-			groups.isMember(req.uid, groupName),
-			groups.isInvited(req.uid, groupName),
-		]);
-		if (!isMember && !isInvited) {
-			return next();
-		}
-	}
-	const [groupData, posts] = await Promise.all([
-		groups.get(groupName, {
-			uid: req.uid,
-			truncateUserList: true,
-			userListCount: 20,
-		}),
-		groups.getLatestMemberPosts(groupName, 10, req.uid),
-	]);
-	if (!groupData) {
-		return next();
-	}
-
-	res.render('clubs/details', {
-		title: `[[pages:clubs, ${groupData.displayName}]]`,
-		group: groupData,
-		posts: posts,
-		isAdmin: isAdmin,
-		isGlobalMod: isGlobalMod,
-		allowPrivateGroups: meta.config.allowPrivateGroups,
-		breadcrumbs: helpers.buildBreadcrumbs([{ text: '[[pages:clubs]]', url: '/clubs' }, { text: groupData.displayName }]),
 	});
 };
 

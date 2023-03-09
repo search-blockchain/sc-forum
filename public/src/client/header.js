@@ -73,6 +73,7 @@ define('forum/header', [
 			require(['logout'], function (logout) {
 				require('js-cookie').remove('forumdata');
 				require('js-cookie').remove('express.sid');
+				require('js-cookie').remove('express.cacheid');
 				logout();
 			});
 			return false;

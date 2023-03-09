@@ -20,6 +20,7 @@ const privileges = require('../privileges');
 const cacheCreate = require('../cache/lru');
 const helpers = require('./helpers');
 const db = require('../database');
+const sockets = require('../socket.io');
 const authenticationController = require('../controllers/authentication');
 const User = user;
 const autoConfirm = true; // Google.settings.autoconfirm;
@@ -105,12 +106,11 @@ Google.getUidByGoogleId = function (gplusid, callback) {
 };
 
 Google.login = function (gplusid, handle, email, picture, callback) {
-
 	Google.getUidByGoogleId(gplusid, (err, uid) => {
 		if (err) {
 			return callback(err);
 		}
-
+		
 		if (uid !== null) {
 			// Existing User
 			callback(null, {
@@ -154,7 +154,6 @@ Google.login = function (gplusid, handle, email, picture, callback) {
 						if (err) {
 							return callback(err);
 						}
-
 						success(uid);
 					});
 				} else {
@@ -165,14 +164,74 @@ Google.login = function (gplusid, handle, email, picture, callback) {
 	});
 };
 
+const destroyAsync = util.promisify((req, callback) => req.session.destroy(callback));
+const logoutAsync = util.promisify((req, callback) => req.logout(callback));
+
+Google.logout = async function (req, res, next) {
+	const payload = {
+		next: `${nconf.get('relative_path')}${req.url}`,
+	};
+	res.clearCookie('forumdata');
+	res.clearCookie('express.cacheid');
+	res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
+	
+	if (!req.loggedIn || !req.sessionID) {
+		res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
+		console.log('logout -- not-logged-in')
+		res.redirect(payload.next);
+		return 
+	}
+	const { uid } = req;
+	const { sessionID } = req;
+ 
+	try {
+		await user.auth.revokeSession(sessionID, uid);
+		await logoutAsync(req);
+		await destroyAsync(req);
+		await user.setUserField(uid, 'lastonline', Date.now() - (meta.config.onlineCutoff * 60000));
+		await db.sortedSetAdd('users:online', Date.now() - (meta.config.onlineCutoff * 60000), uid);
+		await plugins.hooks.fire('static:user.loggedOut', { req: req, res: res, uid: uid, sessionID: sessionID });
+
+		// Force session check for all connected socket.io clients with the same session id
+		sockets.in(`sess_${sessionID}`).emit('checkSession', 0);
+		plugins.hooks.fire('filter:user.logout', payload);
+		return res.redirect(payload.next);
+	} catch (err) {
+		console.log('logout --- error', err)
+		next(err);
+	}
+}
+
 middleware.googleAuth = helpers.try(async (req, res, next) => {
 	console.log('login - googleAuth req.loggedIn -> ', req.loggedIn)
-	// res.cookie('testing', 'token123', {
-	// 	maxAge: 14 * 86400000
-	// })
-	if(req.loggedIn) {
+	const isAdmin = req.uid == 1;
+	const cookieFromApp = (req.cookies ? req.cookies.forumdata : '') || '';
+	const decodeData = Buffer.from(cookieFromApp, 'base64').toString();
+	let cacheUid = (req.cookies ? req.cookies['express.cacheid'] : '') || '';
+	let appData = {};
+
+	if(cacheUid) {
+		cacheUid = cacheUid.substr(13);
+	}
+
+	try {
+		appData = JSON.parse(decodeData || '{}');
+	} catch (e) {
 		return next();
 	}
+
+	// APP已退出
+	if(!cookieFromApp && cacheUid) {
+		return await Google.logout(req, res, next);
+	}
+	if(!cookieFromApp || req.loggedIn && (appData.userId == cacheUid || !cookieFromApp && isAdmin)) {
+		return next();
+	}
+	//  else if(req.loggedIn) {
+	// 	await Google.logout(req, res, next);
+	// }
+	
+
 	// if (req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && req.user.uid > 0) {
 	// 	// TODO no use
 	// 	console.log('login - googleAuth update userdata', req.user)
@@ -182,17 +241,8 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 	// 	return next();
 	// }
 	
-	const cookieFromApp = req.cookies ? req.cookies.forumdata : '';
-
-	console.log('----forumdata', cookieFromApp)
-	if (!cookieFromApp) {
-		return next();
-	}
-	
 	// TODO 两侧增加多余string提高解析门槛
 	// TODO 调用GoogleAPI做实际校验
-	const decodeData = Buffer.from(cookieFromApp, 'base64').toString();
-	const appData = JSON.parse(decodeData || '{}');
 	console.log('login - googleAuth forumdata decode: ', appData);
 	const displayName = (appData.username || appData.name);
 	const {err, userData} = await new Promise((resolve, reject) => {
@@ -201,9 +251,10 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 			if (err) {
 				return reject({err, userData})
 			}
+			
 			req.isFromApp = true
+			userData.appUid = appData.userId
 			req.userFromApp = userData
-			// res.clearCookie('forumdata');
 			return resolve({err, userData})
 		});
 	})

@@ -463,13 +463,13 @@ authenticationController.logout = async function (req, res, next) {
 	}
 	const { uid } = req;
 	const { sessionID } = req;
-
+ 
 	try {
 		await user.auth.revokeSession(sessionID, uid);
 		await logoutAsync(req);
-		res.clearCookie('forumdata');
-		res.clearCookie('express.sid');
 		await destroyAsync(req);
+		res.clearCookie('forumdata');
+		res.clearCookie('express.cacheid');
 		res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
 
 		await user.setUserField(uid, 'lastonline', Date.now() - (meta.config.onlineCutoff * 60000));
