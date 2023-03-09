@@ -224,15 +224,12 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 		return next();
 	}
 
-
-	console.log('-------------START GoogleAuth的相关数据----------------')
-	console.log('cookieFromApp', cookieFromApp, '\n')
-	console.log('appData', appData, '\n')
-	console.log('cacheUid', cacheUid, '\n')
-	console.log('req.loggedIn', req.loggedIn, '\n')
-	console.log('isAdmin', isAdmin, '\n')
-	console.log('-------------END GoogleAuth的相关数据----------------')
-
+	// APP已退出
+	if(!cookieFromApp && cacheUid) {
+		await Google.logout(req, res, next);
+		return next();
+	}
+	
 	if(!cookieFromApp || req.loggedIn && (appData.userId == cacheUid || !cookieFromApp && isAdmin)) {
 		return next();
 	}
@@ -264,7 +261,6 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 			req.isFromApp = true
 			userData.appUid = appData.userId
 			req.userFromApp = userData
-			// res.clearCookie('forumdata');
 			return resolve({err, userData})
 		});
 	})
