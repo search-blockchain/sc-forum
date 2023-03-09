@@ -126,7 +126,6 @@ module.exports = function (Categories) {
 	};
 
 	Categories.getSortedSetRangeDirection = async function (sort) {
-		console.log('getSortedSetRangeDirection----->>> ', sort);
 		sort = sort || 'newest_to_oldest';
 		const direction = ['newest_to_oldest', 'most_posts', 'most_votes', 'most_views','most_luckys'].includes(sort) ? 'highest-to-lowest' : 'lowest-to-highest';
 		const result = await plugins.hooks.fire('filter:categories.getSortedSetRangeDirection', {

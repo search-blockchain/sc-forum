@@ -41,7 +41,8 @@ module.exports = function (Groups) {
 	};
 
 	Groups.getClubsData = async function (groupNames) {
-		return await Groups.getClubsFields(groupNames, []);
+		let clubsData = await Groups.getClubsFields(groupNames, []);
+		return clubsData;
 	};
 
 	Groups.getClubData = async function (groupName) {

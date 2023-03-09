@@ -20,8 +20,17 @@ module.exports = function (Groups) {
 
 		return await db.isSetMembers(`group:${groupName}:owners`, uids);
 	};
-
+    
 	Groups.ownership.grant = async function (toUid, groupName) {
+		let ownerGroups = await db.getObject(`ownerGroups:${toUid}`);
+		if(ownerGroups == null){
+			ownerGroups = {
+				"groupsNames": []	
+			}
+		}
+		ownerGroups.groupsNames.push(groupName)
+
+		await db.setObject(`ownerGroups:${toUid}`, ownerGroups),
 		await db.setAdd(`group:${groupName}:owners`, toUid);
 		plugins.hooks.fire('action:group.grantOwnership', { uid: toUid, groupName: groupName });
 	};
