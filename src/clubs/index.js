@@ -291,6 +291,17 @@ Clubs.getByClubSlug = async function (slug, options) {
 	return await Clubs.get(groupName, options);
 };
 
+Clubs.setMemberObj = async function (uid){
+	let memberGroups = await db.getObject(`memberGroups:${uid}`);
+	if(memberGroups == null){
+		memberGroups = {
+			"groupsNames": []		
+		}
+	}
+	memberGroups.groupsNames.push(groupNames[0])
+	await db.setObject(`memberGroups:${uid}`, memberGroups)
+}
+
 Clubs.getClubNameByClubSlug = async function (slug) {
 	return await db.getObjectField('groupslug:groupname', slugify(slug));
 };
