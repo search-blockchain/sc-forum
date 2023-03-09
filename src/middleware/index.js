@@ -168,11 +168,18 @@ const destroyAsync = util.promisify((req, callback) => req.session.destroy(callb
 const logoutAsync = util.promisify((req, callback) => req.logout(callback));
 
 Google.logout = async function (req, res, next) {
-	console.log('google logout -- ', req.loggedIn, req.sessionID)
+	const payload = {
+		next: `${nconf.get('relative_path')}${req.url}`,
+	};
+	res.clearCookie('forumdata');
+	res.clearCookie('express.cacheid');
+	res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
+	
 	if (!req.loggedIn || !req.sessionID) {
 		res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
-		// return res.status(200).send('not-logged-in');
-		return console.log('logout -- not-logged-in')
+		console.log('logout -- not-logged-in')
+		res.redirect(payload.next);
+		return 
 	}
 	const { uid } = req;
 	const { sessionID } = req;
@@ -181,28 +188,17 @@ Google.logout = async function (req, res, next) {
 		await user.auth.revokeSession(sessionID, uid);
 		await logoutAsync(req);
 		await destroyAsync(req);
-		res.clearCookie('forumdata');
-		res.clearCookie('express.cacheid');
-		res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
-
 		await user.setUserField(uid, 'lastonline', Date.now() - (meta.config.onlineCutoff * 60000));
 		await db.sortedSetAdd('users:online', Date.now() - (meta.config.onlineCutoff * 60000), uid);
 		await plugins.hooks.fire('static:user.loggedOut', { req: req, res: res, uid: uid, sessionID: sessionID });
 
 		// Force session check for all connected socket.io clients with the same session id
 		sockets.in(`sess_${sessionID}`).emit('checkSession', 0);
-		// const payload = {
-		// 	next: `${nconf.get('relative_path')}/`,
-		// };
-		// plugins.hooks.fire('filter:user.logout', payload);
-
-		// if (req.body.noscript === 'true') {
-		// 	return res.redirect(payload.next);
-		// }
-		// res.status(200).send(payload);
+		plugins.hooks.fire('filter:user.logout', payload);
+		return res.redirect(payload.next);
 	} catch (err) {
-		// next(err);
 		console.log('logout --- error', err)
+		next(err);
 	}
 }
 
@@ -226,10 +222,8 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 
 	// APP已退出
 	if(!cookieFromApp && cacheUid) {
-		await Google.logout(req, res, next);
-		return next();
+		return await Google.logout(req, res, next);
 	}
-	
 	if(!cookieFromApp || req.loggedIn && (appData.userId == cacheUid || !cookieFromApp && isAdmin)) {
 		return next();
 	}
