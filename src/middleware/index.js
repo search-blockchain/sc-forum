@@ -182,6 +182,7 @@ Google.logout = async function (req, res, next) {
 		await logoutAsync(req);
 		await destroyAsync(req);
 		res.clearCookie('forumdata');
+		res.clearCookie('express.cacheid');
 		res.clearCookie(nconf.get('sessionKey'), meta.configs.cookie.get());
 
 		await user.setUserField(uid, 'lastonline', Date.now() - (meta.config.onlineCutoff * 60000));
@@ -210,19 +211,31 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 	const isAdmin = req.uid == 1;
 	const cookieFromApp = (req.cookies ? req.cookies.forumdata : '') || '';
 	const decodeData = Buffer.from(cookieFromApp, 'base64').toString();
+	let cacheUid = (req.cookies ? req.cookies['express.cacheid'] : '') || '';
 	let appData = {};
+
+	if(cacheUid) {
+		cacheUid = cacheUid.substr(13);
+	}
 
 	try {
 		appData = JSON.parse(decodeData || '{}');
 	} catch (e) {
-		return next(e);
+		return next();
 	}
 
-	if(!cookieFromApp || req.loggedIn && (appData.clubUid == req.uid || !cookieFromApp && isAdmin)) {
-		return next();
-	} else if(req.loggedIn) {
+	// APP已退出
+	if(!cookieFromApp && cacheUid) {
 		await Google.logout(req, res, next);
+		return next();
 	}
+	
+	if(!cookieFromApp || req.loggedIn && (appData.userId == cacheUid || !cookieFromApp && isAdmin)) {
+		return next();
+	}
+	//  else if(req.loggedIn) {
+	// 	await Google.logout(req, res, next);
+	// }
 	
 
 	// if (req.hasOwnProperty('user') && req.user.hasOwnProperty('uid') && req.user.uid > 0) {
@@ -244,9 +257,10 @@ middleware.googleAuth = helpers.try(async (req, res, next) => {
 			if (err) {
 				return reject({err, userData})
 			}
+			
 			req.isFromApp = true
+			userData.appUid = appData.userId
 			req.userFromApp = userData
-			// res.clearCookie('forumdata');
 			return resolve({err, userData})
 		});
 	})

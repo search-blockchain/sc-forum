@@ -46,6 +46,7 @@ middleware.buildHeader = helpers.try(async (req, res, next) => {
 		req.logout(() => {
 			res.clearCookie('forumdata');
 			res.clearCookie('express.sid');
+			res.clearCookie('express.cacheid');
 			res.redirect('/');
 		});
 		return;

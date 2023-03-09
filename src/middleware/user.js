@@ -39,6 +39,12 @@ module.exports = function (middleware) {
 			await controllers.authentication.onSuccessfulLogin(req, user.uid);
 			req.uid = user.uid;
 			req.loggedIn = req.uid > 0;
+			let current = new Date().getTime().toString()
+			if(user.appUid) {
+				res.cookie('express.cacheid', current + user.appUid, {
+					maxAge: 14 * 86400000
+				});
+			}
 			return true;
 		}
 		
@@ -68,7 +74,7 @@ module.exports = function (middleware) {
 				winston.warn('[api/authenticate] Unable to find user after verifying token');
 				return true;
 			}
-		} else if(req.isFromApp) {
+		} else if(req.isFromApp) { 
 			delete req.isFromApp
 			return await finishLogin(req, req.userFromApp);
 		}

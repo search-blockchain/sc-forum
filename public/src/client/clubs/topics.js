@@ -74,6 +74,9 @@ define("forum/clubs/details", [
 	Details.init = function () {
 		initSort();
 		const detailsPage = components.get("clubs/container");
+		$("#cancel-svg").on("click", function () {
+			window.location.href = "https://www.search.club/forum/clubs";
+		});
 
 		$("#buyBtn").on("click", Details.showDialogToBuy);
 		$("#myModal").on("show.bs.modal", function () {
@@ -338,7 +341,7 @@ define("forum/clubs/details", [
 			return;
 			// return alerts.error("未登录");
 		}
-		if (!userWalletInfo.avaliableBalance) return alerts.error("balance is 0");
+		// if (!userWalletInfo.avaliableBalance) return alerts.error("balance is 0");
 		// if(!clubPrice) return alerts.error("获取不到俱乐部价格");
 		if (clubPrice && Number(userWalletInfo.avaliableBalance) > clubPrice) {
 			Details.buyActiveCode()
