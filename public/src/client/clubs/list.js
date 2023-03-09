@@ -7,6 +7,7 @@ define('forum/clubs/list', [
 	const defaultSort = 'count';
 
 	Clubs.init = function () {
+		console.log('list ------');
 		infinitescroll.init(Clubs.loadMoreClubs);
 		$('#tab1').on('click', function () {
 			console.log('tab1');
