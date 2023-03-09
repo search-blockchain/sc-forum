@@ -92,13 +92,13 @@ module.exports = function (Clubs) {
 	}
 
 	async function setGroupTitleIfNotSet(groupNames, uid) {
-		const ignore = ['registered-users', 'verified-users', 'unverified-users', Groups.BANNED_USERS];
-		groupNames = groupNames.filter(
-			groupName => !ignore.includes(groupName) && !Groups.isPrivilegeClub(groupName)
-		);
-		if (!groupNames.length) {
-			return;
-		}
+		// const ignore = ['registered-users', 'verified-users', 'unverified-users', Groups.BANNED_USERS];
+		//groupNames = groupNames.filter(
+		//	groupName => !ignore.includes(groupName) && !Groups.isPrivilegeClub(groupName)
+		//);
+		 if (!groupNames.length) {
+		 	return;
+		 }
 
 		const currentTitle = await db.getObjectField(`user:${uid}`, 'groupTitle');
 		if (currentTitle || currentTitle === '') {
