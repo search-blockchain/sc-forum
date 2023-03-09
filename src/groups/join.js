@@ -36,11 +36,8 @@ module.exports = function (Groups) {
 			return;
 		}
 		await createNonExistingGroups(groupsToCreate);
-		let needSetMemberGroup = {
-			groupName: groupNames[0]
-		}
+
 		const promises = [
-			db.setObject(`memberGroups:${uid}`, needSetMemberGroup),
 			db.sortedSetsAdd(groupsToJoin.map(groupName => `group:${groupName}:members`), Date.now(), uid),
 			db.incrObjectField(groupsToJoin.map(groupName => `group:${groupName}`), 'memberCount'),
 		];

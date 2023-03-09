@@ -91,7 +91,6 @@ Clubs.getGroupsFromSetDeleteOwnerAndMember = async function (set, start, stop,ui
 	if (set === 'groups:visible:name') {
 		clubNames = clubNames.map(name => name.split(':')[1]);
 	}
-
 	return await Clubs.getGroupsAndMembers(clubNames);
 };
 
@@ -291,6 +290,17 @@ Clubs.getByClubSlug = async function (slug, options) {
 	}
 	return await Clubs.get(groupName, options);
 };
+
+Clubs.setMemberObj = async function (uid,clubName){
+	let memberGroups = await db.getObject(`memberGroups:${uid}`);
+	if(memberGroups == null){
+		memberGroups = {
+			"groupsNames": []		
+		}
+	}
+	memberGroups.groupsNames.push(clubName)
+	await db.setObject(`memberGroups:${uid}`, memberGroups)
+}
 
 Clubs.getClubNameByClubSlug = async function (slug) {
 	return await db.getObjectField('groupslug:groupname', slugify(slug));

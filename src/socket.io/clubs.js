@@ -186,7 +186,6 @@ SocketClubs.loadMore = async (socket, data) => {
 	if (!data.sort || !utils.isNumber(data.after) || parseInt(data.after, 10) < 0) {
 		throw new Error('[[error:invalid-data]]');
 	}
-
 	const groupsPerPage = 10;
 	const start = parseInt(data.after, 10);
 	const stop = start + groupsPerPage - 1;
