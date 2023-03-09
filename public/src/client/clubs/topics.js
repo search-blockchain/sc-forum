@@ -73,7 +73,7 @@ define("forum/clubs/details", [
 
 	Details.init = function () {
 		initSort();
-		const detailsPage = components.get("clubs/container");
+		// const detailsPage = components.get("clubs/container");
 		const headerComp = components.get('navbar');
 		console.log('----- topics page ---->>: ', ajaxify.data);
 		setHeader(ajaxify.data.group);
@@ -218,7 +218,7 @@ define("forum/clubs/details", [
 								(uid || app.user.uid),
 							undefined
 						)
-						.then((d) => console.log('d: ', d))
+						.then(() => ajaxify.refresh())
 						.catch(alerts.error);
 					break;
 
@@ -872,14 +872,15 @@ define("forum/clubs/details", [
 
 	function setHeader(groupObj) {
 		let headerHtml = '';
+		console.log('set header==> ', groupObj);
 		if (groupObj.isOwner) {
 			headerHtml = `
-				<div class='club-join-hint'>
+				<div class='club-join-hint isOwner'>
 					<h3># ${groupObj.displayName}</h3>
 					<span class='tag'>owner</span>
 				</div>
 			`;
-		} else if (groupObj.isMember && groupObj.name !== "administrators") {
+		} else if (groupObj.isMember) {
 			headerHtml = `
 				<div class='club-join-hint'>
 					<h3># ${groupObj.displayName}</h3>
@@ -888,7 +889,7 @@ define("forum/clubs/details", [
 					</button>
 				</div>
 			`;
-		} else if (groupObj.isPending && groupObj.name !== "administrators") {
+		} else if (groupObj.isPending) {
 			headerHtml = '<button class="btn btn-warning disabled"><i class="fa fa-clock-o"></i> Invitation Pending</button>';
 		} else if (groupObj.isInvited) {
 			headerHtml = (
@@ -899,8 +900,7 @@ define("forum/clubs/details", [
 				'"><i class="fa fa-plus"></i> Accept Invitation</button>'
 			);
 		} else if (
-			!groupObj.disableJoinRequests &&
-			groupObj.name !== "administrators"
+			!groupObj.disableJoinRequests
 		) {
 			headerHtml = `
 				<div class='club-join-hint'>

@@ -104,4 +104,46 @@ utils.getCookie = function (key) {
 	}
 };
 
+utils.getUserWalletInfo = function () {
+	return new Promise(function (resolve, reject) {
+		const objFromApp = utils.getCookie("forumdata");
+		if (!objFromApp || !objFromApp?.userId) {
+			return reject("no user found");
+		}
+		const API_URL = "https://www.search.club/userserver";
+		const userId = objFromApp?.userId;
+		$.ajax(
+			`${API_URL}/xcloud-boss-provider-assets/assets/userWalletInfo/queryUserWalletInfo`,
+			{
+				method: "POST",
+				dataType: "json",
+				contentType: "application/json;charset=UTF-8",
+				headers: {
+					// authorization: `Bearer ${token}`,
+					"Content-Type": "application/json;charset=UTF-8",
+					Accept: "application/json",
+				},
+				data: JSON.stringify({ userId }),
+				beforeSend: function () {},
+				success: function (res) {
+					console.log("queryWalletInfo: ", res);
+					if (res.data && +res.code === 200 && res.data.items) {
+						if (res.data.items.length !== 0) {
+							resolve(res.data.items[0]);
+						} else {
+							reject("get avaliable balance failed");
+						}
+					} else {
+						reject(res.message || "get avaliable balance failed");
+					}
+				},
+				error: function (err) {
+					console.log("queryWalletInfo error: ", err);
+					reject(err);
+				},
+			}
+		);
+	});
+};
+
 module.exports = utils;

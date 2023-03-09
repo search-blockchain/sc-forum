@@ -84,7 +84,7 @@ define('forum/header', [
 		console.log('window');
 		$(window).on('action:ajaxify.start', function (e, data) {
 			const currentUrl = data.url;
-			console.log('ajaxify start:== ', e.target.ajaxify, data.url);
+			console.log('ajaxify start:...== ', e.target.ajaxify, data.url);
 			if (currentUrl.startsWith('clubs')) {
 				$('#native-top-navbar').remove();
 				$('#nav-dropdown').remove();
