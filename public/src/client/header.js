@@ -93,6 +93,9 @@ define('forum/header', [
 				if (currentUrl.startsWith('clubs/')) {
 					$('#clubs-home-navbar').hide();
 					$('#clubs-detail-navbar').show();
+					$('#clubs-detail-navbar .back-button')?.eq(0)?.on('click', () => {
+						ajaxify.go('/clubs');
+					});
 				} else {
 					$('#clubs-detail-navbar').hide();
 					$('#clubs-home-navbar').show();
