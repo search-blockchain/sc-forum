@@ -88,6 +88,8 @@ define('forum/header', [
 			if (currentUrl.startsWith('clubs')) {
 				$('#native-top-navbar').remove();
 				$('#nav-dropdown').remove();
+				$('#menu').remove();
+				$('#chats-menu').remove();
 				if (currentUrl.startsWith('clubs/')) {
 					$('#clubs-home-navbar').hide();
 					$('#clubs-detail-navbar').show();
