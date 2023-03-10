@@ -410,7 +410,7 @@ define("forum/clubs/details", [
 				$(".modal-footer").append(
 					`<button type="button" class="btn btn-primary" id="pay">
 						<i class="fas fa-spin fa-spinner"></i>
-						Pay
+						<span style="padding-left: 5px;">Pay</span>
 					</button>`
 				);
 				$(".modal-footer").append(
