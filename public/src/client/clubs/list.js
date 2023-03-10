@@ -19,14 +19,23 @@ define("forum/clubs/list", [
 			window.location.href = "https://www.search.club/";
 		});
 		$("#tab2").on("click", function () {
-			window.location.href = "https://www.search.club/me";
+			if (ajaxify.data.loggedIn) {
+				window.location.href = "https://www.search.club/me";
+			} else {
+				window.location.href = "https://www.search.club/api/auth/signin?callbackUrl=https%3A%2F%2Fwww%2Esearch%2Eclub%2Fme";
+			}
 		});
-		utils.getUserWalletInfo().then(data => {
-			console.log('get wallet: ', data);
-			$('#clubs-home-navbar .sct-amount')?.eq(0)?.text(Number(data.avaliableBalance) || 0);
-		}).catch(e => {
-			console.log('get wallet err: ', e);
-		})
+		utils
+			.getUserWalletInfo()
+			.then((data) => {
+				console.log("get wallet: ", data);
+				$("#clubs-home-navbar .sct-amount")
+					?.eq(0)
+					?.text(Number(data.avaliableBalance) || 0);
+			})
+			.catch((e) => {
+				console.log("get wallet err: ", e);
+			});
 		// Club creation
 		$('button[data-action="new"]').on("click", function () {
 			bootbox.prompt("[[groups:new-group.group_name]]", function (name) {
