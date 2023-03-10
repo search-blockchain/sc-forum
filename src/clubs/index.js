@@ -298,7 +298,11 @@ Clubs.setMemberObj = async function (uid,clubName){
 			"groupsNames": []		
 		}
 	}
-	memberGroups.groupsNames.push(clubName)
+
+	if(memberGroups.groupsNames.includes(clubName)){
+	}else{
+		memberGroups.groupsNames.push(clubName)
+	}
 	await db.setObject(`memberGroups:${uid}`, memberGroups)
 }
 
