@@ -60,7 +60,7 @@ define("forum/clubs/details", [
 	let userWalletInfo = {};
 
 	let token = "";
-	const clubName = ajaxify.data.group.slug;
+	let clubName = "";
 	let clubPrice = 0;
 	let basicScore = 0;
 	let userId = "";
@@ -72,6 +72,7 @@ define("forum/clubs/details", [
 	});
 
 	Details.init = function () {
+		clubName = ajaxify.data.group.slug;
 		initSort();
 		// const detailsPage = components.get("clubs/container");
 		const headerComp = components.get('navbar');
