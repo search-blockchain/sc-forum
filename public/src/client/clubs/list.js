@@ -22,7 +22,7 @@ define("forum/clubs/list", [
 			if (ajaxify.data.loggedIn) {
 				window.location.href = "https://www.search.club/me";
 			} else {
-				window.location.href = "https://www.search.club/api/auth/signin?callbackUrl=https%3A%2F%2Fwww%2Esearch%2Eclub%2Fme";
+				window.location.href = "https://www.search.club/api/auth/signin?callbackUrl=https://www.search.club/me";
 			}
 		});
 		utils
