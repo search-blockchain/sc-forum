@@ -32,6 +32,7 @@ module.exports = function (Clubs) {
 			Clubs.getMemberGroups(req.uid),
 			Clubs.getOwnerGroups(req.uid),
 		]);
+
 		const [memberGroupsData,ownerGroupsData] = await Promise.all([
 			Clubs.getGroupsAndMembers(memberGroupsNames),
 			Clubs.getGroupsAndMembers(ownerGroupsNames),
@@ -40,7 +41,6 @@ module.exports = function (Clubs) {
 		let totalClub = []
 		let ownerClub = []
 		let memberClub = []
-	
 		for (let i = 0; i < ownerGroupsData.length; i++) {
 			let item = ownerGroupsData[i];
 			let isMember = await Clubs.isMember(req.uid, item.name);
@@ -51,7 +51,6 @@ module.exports = function (Clubs) {
 			}
 		}
 		ownerClub.sort((a,b)=>{return b.memberCount - a.memberCount})
-		
 		for (let i = 0; i < memberGroupsData.length; i++) {
 			let item = memberGroupsData[i];
 			let isMember = await Clubs.isMember(req.uid, item.name);
@@ -61,6 +60,7 @@ module.exports = function (Clubs) {
 				memberClub.push(obj)
 			}
 		}
+
 		memberClub.sort((a,b)=>{return b.memberCount - a.memberCount})
 	
 		totalClub = totalClub.concat(ownerClub,memberClub)

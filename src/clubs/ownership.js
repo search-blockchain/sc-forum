@@ -28,7 +28,10 @@ module.exports = function (Groups) {
 				"groupsNames": []	
 			}
 		}
-		ownerGroups.groupsNames.push(groupName)
+		if(ownerGroups.groupsNames.includes(groupName)){
+		}else{
+			ownerGroups.groupsNames.push(groupName)
+		}
 
 		await db.setObject(`ownerGroups:${toUid}`, ownerGroups),
 		await db.setAdd(`group:${groupName}:owners`, toUid);
