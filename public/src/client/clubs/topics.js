@@ -47,7 +47,7 @@ define("forum/clubs/details", [
 	// let HOST_URL = window.location.origin;
 	const origin = window.location.origin;
 	const isDev = origin.indexOf("search.club") === -1;
-	const API_URL = isDev
+	const API_URL = false
 		? "http://192.168.1.107:7979"
 		: "https://www.search.club/userserver";
 	const FORUM_URL = origin;
@@ -348,13 +348,14 @@ define("forum/clubs/details", [
 		}
 		// if (!userWalletInfo.avaliableBalance) return alerts.error("balance is 0");
 		// if(!clubPrice) return alerts.error("获取不到俱乐部价格");
-		if (clubPrice && Number(userWalletInfo.avaliableBalance) > clubPrice) {
+		if (clubPrice && Number(userWalletInfo.avaliableBalance) >= clubPrice) {
 			Details.buyActiveCode()
 				.then((res) => {
 					clubPrice = res.amount;
 					$("#clubPrice").text(clubPrice);
 				})
 				.catch(() => {});
+			$(".modal-header").css({ borderBottom: '0px solid #dfdfdf' });
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
 				`<button type="button" class="btn btn-primary" id="pay">
@@ -375,9 +376,9 @@ define("forum/clubs/details", [
 					</svg>
 				</button>`
 			);
-			$(".modal-footer").append(
-				`<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>`
-			);
+			// $(".modal-footer").append(
+			// 	`<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>`
+			// );
 			$("#modalBodyContent").empty();
 			$("#modalBodyContent").append(`
 				<div class="content-0">
@@ -410,12 +411,11 @@ define("forum/clubs/details", [
 				$(".modal-footer").append(
 					`<button type="button" class="btn btn-primary" id="pay">
 						<i class="fas fa-spin fa-spinner"></i>
-						<span style="padding-left: 5px;">Pay</span>
 					</button>`
 				);
-				$(".modal-footer").append(
-					'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
-				);
+				// $(".modal-footer").append(
+				// 	'<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>'
+				// );
 				$.ajax(
 					`${API_URL}/xcloud-boss-provider-assets/assets/userWallet/buyPointCard`,
 					{
@@ -451,13 +451,14 @@ define("forum/clubs/details", [
 				);
 			});
 		} else {
+			$(".modal-header").css({ borderBottom: '1px solid #dfdfdf' });
 			$(".modal-footer").empty();
 			$(".modal-footer").append(
 				`<button type="button" class="btn btn-primary" id="goToSearch">Go to earn</button>`
 			);
-			$(".modal-footer").append(
-				`<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>`
-			);
+			// $(".modal-footer").append(
+			// 	`<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>`
+			// );
 			$("#modalBodyContent").empty();
 			// $("#modalBodyContent").append(
 			// 	'<div class="content-1">Your <span class="sct">SCT</span> is not enough</div>'
