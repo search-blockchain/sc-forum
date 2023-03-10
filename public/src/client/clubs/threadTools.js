@@ -107,9 +107,9 @@ define('forum/clubs/threadTools', [
 		});
 
 		topicContainer.on('click', '[component="topic/delete/posts"]', function () {
-			require(['forum/topic/delete-posts'], function (deletePosts) {
-				deletePosts.init();
-			});
+			// require(['forum/topic/delete-posts'], function (deletePosts) {
+			// 	deletePosts.init();
+			// });
 		});
 
 		topicContainer.on('click', '[component="topic/fork"]', function () {
@@ -243,43 +243,45 @@ define('forum/clubs/threadTools', [
 	}
 
 	ThreadTools.requestPinExpiry = function (body, onSuccess) {
-		app.parseAndTranslate('modals/set-pin-expiry', {}, function (html) {
-			const modal = bootbox.dialog({
-				title: '[[topic:thread_tools.pin]]',
-				message: html,
-				onEscape: true,
-				size: 'small',
-				buttons: {
-					cancel: {
-						label: '[[modules:bootbox.cancel]]',
-						className: 'btn-link',
-					},
-					save: {
-						label: '[[global:save]]',
-						className: 'btn-primary',
-						callback: function () {
-							const expiryEl = modal.get(0).querySelector('#expiry');
-							let expiry = expiryEl.value;
+		// 跳过过期时间选择
+		onSuccess();
+		// app.parseAndTranslate('modals/set-pin-expiry', {}, function (html) {
+		// 	const modal = bootbox.dialog({
+		// 		title: '[[topic:thread_tools.pin]]',
+		// 		message: html,
+		// 		onEscape: true,
+		// 		size: 'small',
+		// 		buttons: {
+		// 			cancel: {
+		// 				label: '====[[modules:bootbox.cancel]]',
+		// 				className: 'btn-link',
+		// 			},
+		// 			save: {
+		// 				label: '[[global:save]]',
+		// 				className: 'btn-primary',
+		// 				callback: function () {
+		// 					const expiryEl = modal.get(0).querySelector('#expiry');
+		// 					let expiry = expiryEl.value;
+		// 					console.log('expire::: ', expiry);
+		// 					// No expiry set
+		// 					if (expiry === '') {
+		// 						return onSuccess();
+		// 					}
 
-							// No expiry set
-							if (expiry === '') {
-								return onSuccess();
-							}
+		// 					// Expiration date set
+		// 					expiry = new Date(expiry);
 
-							// Expiration date set
-							expiry = new Date(expiry);
-
-							if (expiry && expiry.getTime() > Date.now()) {
-								body.expiry = expiry.getTime();
-								onSuccess();
-							} else {
-								alerts.error('[[error:invalid-date]]');
-							}
-						},
-					},
-				},
-			});
-		});
+		// 					if (expiry && expiry.getTime() > Date.now()) {
+		// 						body.expiry = expiry.getTime();
+		// 						onSuccess();
+		// 					} else {
+		// 						alerts.error('[[error:invalid-date]]');
+		// 					}
+		// 				},
+		// 			},
+		// 		},
+		// 	});
+		// });
 	};
 
 	ThreadTools.setLockedState = function (data) {

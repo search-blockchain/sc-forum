@@ -106,9 +106,9 @@ define('forum/topic/threadTools', [
 		});
 
 		topicContainer.on('click', '[component="topic/delete/posts"]', function () {
-			require(['forum/topic/delete-posts'], function (deletePosts) {
-				deletePosts.init();
-			});
+			// require(['forum/topic/delete-posts'], function (deletePosts) {
+			// 	deletePosts.init();
+			// });
 		});
 
 		topicContainer.on('click', '[component="topic/fork"]', function () {
