@@ -434,6 +434,7 @@ define("forum/clubs/details", [
 						}),
 						success: function (res) {
 							console.log("buyPointCard", res);
+							$(this).attr("data-dismiss","modal");
 							$("#myModal").modal("hide");
 							if (res.data && +res.code === 200) {
 								alerts.success("buy successfully");
@@ -445,6 +446,7 @@ define("forum/clubs/details", [
 						},
 						error: function (err) {
 							console.log("buyPointCard", err);
+							$(this).attr("data-dismiss","modal");
 							$("#myModal").modal("hide");
 							alerts.error("pay failed");
 						},
@@ -471,6 +473,7 @@ define("forum/clubs/details", [
 				`<span class="tip-text">Coin in your account is insufficient, earn more by searching!</span>`
 			);
 			$("#goToSearch").on("click", function () {
+				$(this).attr("data-dismiss","modal");
 				window.location.href = APP_URL;
 			});
 		}
