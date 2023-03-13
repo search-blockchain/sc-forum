@@ -78,7 +78,12 @@ utils.assertPasswordValidity = (password, zxcvbn) => {
 
 utils.generateUUID = function () {
 	// from https://github.com/tracker1/node-uuid4/blob/master/browser.js
-	const temp_url = URL.createObjectURL(Blob ? new Blob() : new NodeBlob());
+	let temp_url = ''
+	try {
+	    temp_url = URL.createObjectURL(new Blob());
+	} catch(e) {
+	    temp_url = URL.createObjectURL(new NodeBlob());
+	}
 	const uuid = temp_url.toString();
 	URL.revokeObjectURL(temp_url);
 	return uuid.split(/[:/]/g).pop().toLowerCase(); // remove prefixes
